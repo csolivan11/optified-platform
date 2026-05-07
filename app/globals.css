@@ -1,0 +1,145 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────────────────────
+   Optified design tokens
+   The shadcn/ui component library expects a set of HSL variables
+   on :root. We redefine them here so every shadcn primitive
+   inherits the brand navy system automatically.
+
+   Dark is the default/primary aesthetic. Light mode is defined
+   for completeness (e.g. printed reports) but not primary.
+   ───────────────────────────────────────────────────────────── */
+
+@layer base {
+  :root {
+    /* Dark is our primary — these root values are the dark theme */
+    --background: 214 54% 8%;          /* navy-800 #0F1D33 */
+    --foreground: 225 35% 95%;          /* cloud #EDEFF7 */
+
+    --card: 214 50% 20%;                /* navy-600 brand #192C4C */
+    --card-foreground: 225 35% 95%;
+
+    --popover: 214 50% 20%;
+    --popover-foreground: 225 35% 95%;
+
+    --primary: 225 35% 95%;             /* cloud — buttons stand out */
+    --primary-foreground: 214 54% 8%;
+
+    --secondary: 214 40% 25%;           /* elevated navy */
+    --secondary-foreground: 225 35% 95%;
+
+    --muted: 214 40% 22%;
+    --muted-foreground: 225 15% 72%;    /* steel */
+
+    --border: 214 40% 25%;
+    --input: 214 40% 25%;
+    --ring: 160 84% 39%;                /* success green focus ring */
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 225 35% 95%;
+
+    --radius: 0.75rem;
+  }
+
+  .light {
+    --background: 225 43% 97%;          /* cloud */
+    --foreground: 214 54% 8%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 214 54% 8%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 214 54% 8%;
+
+    --primary: 214 50% 20%;             /* navy */
+    --primary-foreground: 225 35% 95%;
+
+    --secondary: 225 30% 92%;
+    --secondary-foreground: 214 54% 8%;
+
+    --muted: 225 25% 94%;
+    --muted-foreground: 225 10% 44%;
+
+    --border: 225 20% 88%;
+    --input: 225 20% 88%;
+    --ring: 214 50% 20%;
+
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 225 35% 95%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    /* Subtle radial vignette for atmosphere — luxury touch */
+    background-image: radial-gradient(
+      ellipse at top,
+      hsl(214 50% 14%) 0%,
+      hsl(var(--background)) 55%
+    );
+    background-attachment: fixed;
+  }
+
+  body {
+    @apply bg-transparent text-foreground antialiased;
+    font-feature-settings: "ss01", "cv11"; /* Manrope stylistic sets for refinement */
+  }
+
+  /* Typography defaults that feel editorial, not SaaS */
+  h1 {
+    @apply text-h1 tracking-tight;
+  }
+  h2 {
+    @apply text-h2 tracking-tight;
+  }
+  h3 {
+    @apply text-h3;
+  }
+
+  /* Scrollbar refinement — subtle on navy */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(214 40% 22%);
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(214 40% 30%);
+    background-clip: padding-box;
+  }
+
+  /* Focus ring treatment — refined, not default-blue */
+  :focus-visible {
+    outline: none;
+    @apply ring-2 ring-success ring-offset-2 ring-offset-background;
+  }
+}
+
+/* ─── Utility: soft card surface used on premium panels ─── */
+@layer components {
+  .surface {
+    @apply bg-card border border-border rounded-lg;
+  }
+
+  .surface-elevated {
+    @apply bg-card border border-border rounded-lg shadow-elevation-2;
+  }
+
+  /* Overline treatment for category labels */
+  .overline {
+    @apply text-overline uppercase text-muted-foreground;
+  }
+}
