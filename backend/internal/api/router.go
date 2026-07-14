@@ -38,6 +38,7 @@ func ConfigureRouter() *chi.Mux {
 		r.Use(AuthenticationMiddleware)
 		r.Get("/dashboard", ServeDashboard)
 		r.Get("/coach", ServeCoach)
+		r.Get("/settings", ServeSettings)
 	})
 
 	// ─── API Routing Group ────────────────────────────────────────
@@ -68,6 +69,7 @@ func ConfigureRouter() *chi.Mux {
 
 			// Supplement Intake Compliance Toggling
 			r.Post("/supplements/toggle", HandleToggleSupplement)
+			r.Post("/supplements/schedule", HandleCreateSupplementSchedule)
 
 			// Audit Logs
 			r.Get("/audit-logs/{clientId}", HandleListAuditLogs)
@@ -154,6 +156,45 @@ func AuthenticationMiddleware(next http.Handler) http.Handler {
 		}
 
 		isAPI := strings.HasPrefix(r.URL.Path, "/api/")
+
+		// 3. Inactivity Session Timeout Check (HIPAA / FedRAMP safeguards)
+		if !isAPI && tokenString != "" {
+			now := time.Now().Unix()
+			activityCookie, err := r.Cookie("sb-last-activity")
+			if err == nil {
+				var lastActivity int64
+				if _, scanErr := fmt.Sscanf(activityCookie.Value, "%d", &lastActivity); scanErr == nil {
+					// 15-minute inactivity limit (900 seconds)
+					if now-lastActivity > 900 {
+						slog.Warn("Session timeout triggered due to inactivity", "inactive_seconds", now-lastActivity)
+						http.SetCookie(w, &http.Cookie{
+							Name:     "sb-access-token",
+							Value:    "",
+							Path:     "/",
+							MaxAge:   -1,
+							HttpOnly: true,
+						})
+						http.SetCookie(w, &http.Cookie{
+							Name:     "sb-last-activity",
+							Value:    "",
+							Path:     "/",
+							MaxAge:   -1,
+							HttpOnly: true,
+						})
+						http.Redirect(w, r, "/login?error=timeout", http.StatusSeeOther)
+						return
+					}
+				}
+			}
+			http.SetCookie(w, &http.Cookie{
+				Name:     "sb-last-activity",
+				Value:    fmt.Sprintf("%d", now),
+				Path:     "/",
+				HttpOnly: true,
+				Secure:   false, // Set false for local HTTP emulator setups, true in prod
+				SameSite: http.SameSiteLaxMode,
+			})
+		}
 
 		// Handle missing token
 		if tokenString == "" {

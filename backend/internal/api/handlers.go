@@ -79,11 +79,66 @@ func ServeDashboard(w http.ResponseWriter, r *http.Request) {
 		slog.Error("failed to query supplements schedules", "userID", userID, "error", err)
 	}
 
+	// Query client's microbiome results
+	var diversityIndex, dysbiosisIndex float64
+	var pathobionts []string
+	err = db.Pool.QueryRow(ctx,
+		`SELECT COALESCE(diversity_index, 7.5), COALESCE(dysbiosis_index, 3.2), COALESCE(detected_pathobionts, ARRAY[]::text[])
+		 FROM phi_stub.microbiome_results
+		 WHERE client_id = $1
+		 ORDER BY test_date DESC LIMIT 1`, userID).Scan(&diversityIndex, &dysbiosisIndex, &pathobionts)
+	if err != nil {
+		slog.Warn("no microbiome records found for dashboard, using default stubs", "userID", userID, "error", err)
+		diversityIndex = 7.5
+		dysbiosisIndex = 3.2
+		pathobionts = []string{"Clostridium bolteae", "Escherichia coli"}
+	}
+
+	// Query client's metabolic assessments
+	var vo2Peak, rerResting float64
+	var rmrKcal int
+	err = db.Pool.QueryRow(ctx,
+		`SELECT COALESCE(vo2_peak, 48.0), COALESCE(rmr_kcal, 1850), COALESCE(rer_resting, 0.78)
+		 FROM phi_stub.metabolic_assessments
+		 WHERE client_id = $1
+		 ORDER BY test_date DESC LIMIT 1`, userID).Scan(&vo2Peak, &rmrKcal, &rerResting)
+	if err != nil {
+		slog.Warn("no metabolic assessments found for dashboard, using default stubs", "userID", userID, "error", err)
+		vo2Peak = 48.0
+		rmrKcal = 1850
+		rerResting = 0.78
+	}
+
 	data := map[string]interface{}{
-		"Profile":     profile,
-		"Supplements": supplements,
+		"Profile":          profile,
+		"Supplements":      supplements,
+		"DiversityIndex":   diversityIndex,
+		"DysbiosisIndex":   dysbiosisIndex,
+		"Pathobionts":      pathobionts,
+		"VO2Peak":          vo2Peak,
+		"RMRKcal":          rmrKcal,
+		"RERResting":       rerResting,
 	}
 	RenderTemplate(w, "dashboard", data)
+}
+
+// ServeSettings renders the client settings and device configuration screen
+func ServeSettings(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	userID, _ := ctx.Value(UserIDKey).(string)
+
+	pRepo := &repository.ProfileRepo{}
+	profile, err := pRepo.GetByID(ctx, userID)
+	if err != nil {
+		slog.Error("failed to retrieve profile for settings", "userID", userID, "error", err)
+		http.Redirect(w, r, "/login?error=profile", http.StatusSeeOther)
+		return
+	}
+
+	data := map[string]interface{}{
+		"Profile": profile,
+	}
+	RenderTemplate(w, "settings", data)
 }
 
 // ServeCoach renders the secure coach client pipeline console
@@ -272,6 +327,7 @@ func HandleHealth(w http.ResponseWriter, r *http.Request) {
 }
 
 // HandleListClients retrieves the profiles of clients (Coaches and Admins only)
+// HandleListClients retrieves the profiles of clients (Coaches and Admins only)
 func HandleListClients(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	role, _ := ctx.Value(UserRoleKey).(string)
@@ -281,11 +337,57 @@ func HandleListClients(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pRepo := &repository.ProfileRepo{}
-	clients, err := pRepo.ListClients(ctx)
+	searchQuery := r.URL.Query().Get("search")
+	var clients []repository.Profile
+	var err error
+
+	if searchQuery != "" {
+		rows, errQuery := db.Pool.Query(ctx, 
+			`SELECT id, email, display_name, role, created_at, updated_at 
+			 FROM public.profiles 
+			 WHERE role = 'client' AND (display_name ILIKE $1 OR email ILIKE $1)`, 
+			"%"+searchQuery+"%")
+		if errQuery == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var p repository.Profile
+				if errScan := rows.Scan(&p.ID, &p.Email, &p.DisplayName, &p.Role, &p.CreatedAt, &p.UpdatedAt); errScan == nil {
+					clients = append(clients, p)
+				}
+			}
+		} else {
+			err = errQuery
+		}
+	} else {
+		pRepo := &repository.ProfileRepo{}
+		clients, err = pRepo.ListClients(ctx)
+	}
+
 	if err != nil {
 		slog.Error("failed to retrieve client list", "error", err)
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Internal database error"})
+		return
+	}
+
+	isHX := r.Header.Get("HX-Request") == "true"
+	if isHX {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		var htmlContent string
+		for _, c := range clients {
+			htmlContent += fmt.Sprintf(`
+				<div hx-get="/api/clinical-notes/%s" hx-target="#detail-pane" hx-swap="innerHTML"
+					 class="p-4 rounded-lg border border-navy-900 bg-navy-900/50 hover:bg-navy-900 hover:border-navy-750 transition cursor-pointer flex items-center justify-between group">
+					<div>
+						<h3 class="text-sm font-semibold text-slate-200 group-hover:text-white">%s</h3>
+						<p class="text-xs text-slate-500 mt-1">Client ID: %s</p>
+					</div>
+					<span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+				</div>`, c.ID, c.DisplayName, c.ID)
+		}
+		if len(clients) == 0 {
+			htmlContent = `<p class="text-xs text-slate-500 text-center py-8">No clients match your search query.</p>`
+		}
+		w.Write([]byte(htmlContent))
 		return
 	}
 
@@ -618,4 +720,65 @@ func HandleToggleSupplement(w http.ResponseWriter, r *http.Request) {
 	} else {
 		w.Write([]byte(`<span class="text-xs text-slate-500 font-medium">Pending</span>`))
 	}
+}
+
+// HandleCreateSupplementSchedule adds a new supplement schedule regime for a client
+func HandleCreateSupplementSchedule(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	callerID, _ := ctx.Value(UserIDKey).(string)
+	callerRole, _ := ctx.Value(UserRoleKey).(string)
+
+	if callerRole != "admin" && callerRole != "coach" {
+		http.Error(w, "Forbidden: Only clinicians can manage supplement regimes", http.StatusForbidden)
+		return
+	}
+
+	clientID := r.FormValue("client_id")
+	supplementName := r.FormValue("supplement_name")
+	dosage := r.FormValue("dosage")
+	frequency := r.FormValue("frequency")
+
+	if clientID == "" || supplementName == "" || dosage == "" || frequency == "" {
+		http.Error(w, "Missing required parameters", http.StatusBadRequest)
+		return
+	}
+
+	_, err := db.Pool.Exec(ctx,
+		`INSERT INTO phi_stub.supplement_schedules (client_id, supplement_name, dosage, frequency)
+		 VALUES ($1, $2, $3, $4);`,
+		clientID, supplementName, dosage, frequency,
+	)
+	if err != nil {
+		slog.Error("failed to create supplement schedule rule", "error", err)
+		http.Error(w, "Internal database error", http.StatusInternalServerError)
+		return
+	}
+
+	// Compliance Audit log
+	action := "created_supplement_schedule"
+	resType := "supplement_schedule"
+	ip := r.RemoteAddr
+	ua := r.UserAgent()
+	meta := fmt.Sprintf(`{"supplement": %q, "dosage": %q}`, supplementName, dosage)
+
+	auditLog := repository.AuditLog{
+		ActorID:        callerID,
+		ActorRole:      callerRole,
+		Action:         action,
+		ResourceType:   &resType,
+		TargetClientID: &clientID,
+		IPAddress:      &ip,
+		UserAgent:      &ua,
+		Metadata:       &meta,
+	}
+	auditRepo := &repository.AuditLogRepo{}
+	_ = auditRepo.Create(ctx, auditLog)
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(`
+		<div class="p-2 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex justify-between items-center mb-2">
+			<span>Schedule for ` + supplementName + ` created!</span>
+			<button class="hover:underline text-[10px]" onclick="this.parentElement.remove()">Dismiss</button>
+		</div>
+	`))
 }

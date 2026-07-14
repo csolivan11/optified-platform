@@ -58,6 +58,15 @@
             </form>
 
             <div id="login-error" class="mt-4 text-center text-xs text-red-400"></div>
+            <script>
+                const urlParams = new URLSearchParams(window.location.search);
+                const error = urlParams.get('error');
+                if (error === 'timeout') {
+                    document.getElementById('login-error').innerText = 'Session expired due to inactivity (15 mins). Please sign in again.';
+                } else if (error === 'expired') {
+                    document.getElementById('login-error').innerText = 'Authentication token expired.';
+                }
+            </script>
         </div>
     </div>
 </div>

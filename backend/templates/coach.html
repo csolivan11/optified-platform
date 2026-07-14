@@ -2,8 +2,16 @@
 <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
     <!-- Client Pipeline Panel -->
     <div class="lg:col-span-1 rounded-xl border border-navy-850 bg-navy-950 p-6 flex flex-col h-[75vh]">
-        <h2 class="text-lg font-bold text-slate-100 mb-4">Assigned Client Pipeline</h2>
-        <div class="flex-1 overflow-y-auto space-y-3 pr-2">
+        <h2 class="text-lg font-bold text-slate-100 mb-2">Assigned Client Pipeline</h2>
+        <div class="mb-4">
+            <input type="text" name="search" placeholder="Search clients by name..." 
+                   hx-get="/api/clients"
+                   hx-trigger="keyup changed delay:300ms"
+                   hx-target="#client-list-container"
+                   hx-swap="innerHTML"
+                   class="w-full px-3 py-1.5 border border-navy-800 rounded bg-navy-900 text-slate-200 text-xs focus:outline-none focus:border-cyan-500">
+        </div>
+        <div id="client-list-container" class="flex-1 overflow-y-auto space-y-3 pr-2">
             <!-- Client Cards -->
             {{range .Clients}}
             <div hx-get="/api/clinical-notes/{{.ID}}" hx-target="#detail-pane" hx-swap="innerHTML"
@@ -133,7 +141,13 @@
 
         <!-- Clinical Notes History (PHI) -->
         <div>
-            <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-450 mb-3">Clinical / Medical Notes History (PHI)</h3>
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-450">Clinical / Medical Notes History (PHI)</h3>
+                <button hx-get="/api/audit-logs/{{.Client.ID}}" hx-target="#notes-list" hx-swap="innerHTML"
+                        class="px-2.5 py-1 border border-navy-800 rounded bg-navy-900 hover:bg-navy-850 text-[10px] font-semibold text-slate-355 hover:text-white transition">
+                    View Audit Trail
+                </button>
+            </div>
             <div id="notes-list" class="space-y-4">
                 {{range .Notes}}
                 <div class="p-4 rounded-lg border border-navy-850 bg-navy-900/30">
@@ -150,6 +164,28 @@
         </div>
     </div>
 
+    <!-- Supplement Protocol Creator Form -->
+    <div class="border-t border-navy-900 pt-4 bg-navy-950 pb-2">
+        <h4 class="text-xs font-semibold text-slate-450 uppercase mb-2">Prescribe Supplement Protocol</h4>
+        <div id="supp-creator-feedback"></div>
+        <form hx-post="/api/supplements/schedule"
+              hx-target="#supp-creator-feedback"
+              hx-swap="innerHTML"
+              hx-on::after-request="if(event.detail.successful) { this.reset(); }"
+              class="grid grid-cols-1 md:grid-cols-4 gap-2">
+            <input type="hidden" name="client_id" value="{{.Client.ID}}">
+            <input type="text" name="supplement_name" required placeholder="Supplement Name"
+                   class="px-2 py-1.5 border border-navy-800 rounded bg-navy-900 text-slate-200 text-xs focus:outline-none">
+            <input type="text" name="dosage" required placeholder="Dosage (e.g. 500 mg)"
+                   class="px-2 py-1.5 border border-navy-800 rounded bg-navy-900 text-slate-200 text-xs focus:outline-none">
+            <input type="text" name="frequency" required placeholder="Frequency (e.g. Daily)"
+                   class="px-2 py-1.5 border border-navy-800 rounded bg-navy-900 text-slate-200 text-xs focus:outline-none">
+            <button type="submit" class="px-3 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold transition">
+                Create Schedule
+            </button>
+        </form>
+    </div>
+
     <!-- Notes Composer Form -->
     <div class="border-t border-navy-900 pt-4 bg-navy-950">
         <!-- Forms triggers API POST, prepends result to #notes-list, and resets input -->
@@ -162,6 +198,20 @@
             <label for="content" class="block text-xs font-medium text-slate-400">
                 Create Clinical Log (Note will be appended to the client's PHI profile)
             </label>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="const ta = document.getElementById('content'); ta.value += ' **bold**'; ta.focus();"
+                        class="px-2 py-0.5 rounded border border-navy-800 bg-navy-900 hover:bg-navy-850 text-[10px] font-mono text-slate-400 hover:text-white transition">
+                    B
+                </button>
+                <button type="button" onclick="const ta = document.getElementById('content'); ta.value += ' *italic*'; ta.focus();"
+                        class="px-2 py-0.5 rounded border border-navy-800 bg-navy-900 hover:bg-navy-850 text-[10px] font-mono text-slate-400 hover:text-white transition italic">
+                    I
+                </button>
+                <button type="button" onclick="const ta = document.getElementById('content'); ta.value += '\n- Item'; ta.focus();"
+                        class="px-2 py-0.5 rounded border border-navy-800 bg-navy-900 hover:bg-navy-850 text-[10px] font-mono text-slate-400 hover:text-white transition">
+                    List
+                </button>
+            </div>
             <div class="flex gap-3">
                 <textarea id="content" name="content" required rows="2" placeholder="Patient shows optimal apoB recovery. Continue supplements..."
                     class="appearance-none block w-full px-3 py-2 border border-navy-800 rounded-md shadow-sm bg-navy-900 text-slate-100 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 text-sm"></textarea>

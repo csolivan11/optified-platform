@@ -1,0 +1,74 @@
+{{define "content"}}
+<div class="space-y-6">
+    <!-- Settings Page Header -->
+    <div class="sm:flex sm:items-center sm:justify-between border-b border-navy-850 pb-5">
+        <div>
+            <h1 class="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Profile & Wearable Settings</h1>
+            <p class="mt-2 text-sm text-slate-450">Manage your connected medical devices, OAuth profile credentials, and data synchronization.</p>
+        </div>
+    </div>
+
+    <!-- Integrations settings panel -->
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <!-- Wearable APIs Token Manager -->
+        <div class="rounded-xl border border-navy-850 bg-navy-950 p-6 shadow-md">
+            <h2 class="text-base font-semibold text-slate-100 mb-4 flex items-center gap-2">
+                <span class="h-2 w-2 rounded-full bg-cyan-400"></span>
+                Connected Wearable Services (OAuth2)
+            </h2>
+            <p class="text-xs text-slate-500 mb-4">Connect directly to third-party services via REST API connectors.</p>
+
+            <form hx-post="/api/wearables/sync" hx-swap="none" class="space-y-4">
+                <div>
+                    <label for="oura_token" class="block text-xs font-semibold text-slate-400 mb-1">Oura Ring Personal Access Token (PAT)</label>
+                    <input type="password" id="oura_token" name="oura_token" value="••••••••••••••••"
+                           class="w-full px-3 py-2 border border-navy-800 rounded bg-navy-900 text-slate-200 text-xs focus:ring-emerald-500 focus:border-emerald-500">
+                </div>
+                <div>
+                    <label for="whoop_token" class="block text-xs font-semibold text-slate-400 mb-1">Whoop Developer Client Secret</label>
+                    <input type="password" id="whoop_token" name="whoop_token" value="••••••••••••••••"
+                           class="w-full px-3 py-2 border border-navy-800 rounded bg-navy-900 text-slate-200 text-xs focus:ring-emerald-500 focus:border-emerald-500">
+                </div>
+                <div class="pt-2">
+                    <button type="submit" class="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition">
+                        Update OAuth Access Tokens
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Mobile OS Integrations -->
+        <div class="rounded-xl border border-navy-850 bg-navy-950 p-6 shadow-md flex flex-col justify-between">
+            <div>
+                <h2 class="text-base font-semibold text-slate-100 mb-4 flex items-center gap-2">
+                    <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                    Mobile Operating System Integrations
+                </h2>
+                <p class="text-xs text-slate-500 mb-4">Grant permissions to stream biological activity directly from device operating system layers.</p>
+
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between border-b border-navy-900 pb-3">
+                        <div>
+                            <span class="text-xs font-semibold text-slate-200 block">Apple iOS Activity (HealthKit)</span>
+                            <span class="text-[10px] text-slate-500">Stream workouts, step counts, and active energy burn metrics.</span>
+                        </div>
+                        <input type="checkbox" checked class="h-4 w-4 rounded border-navy-800 bg-navy-900 text-emerald-500 focus:ring-emerald-500">
+                    </div>
+
+                    <div class="flex items-center justify-between border-b border-navy-900 pb-3">
+                        <div>
+                            <span class="text-xs font-semibold text-slate-200 block">Google Android OS (Health Connect)</span>
+                            <span class="text-[10px] text-slate-500">Sync respiration rate, pulse pressure range, and heart rate patterns.</span>
+                        </div>
+                        <input type="checkbox" checked class="h-4 w-4 rounded border-navy-800 bg-navy-900 text-emerald-500 focus:ring-emerald-500">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="pt-4 text-[10px] text-slate-500 leading-relaxed border-t border-navy-900">
+                Data synchronization operates under End-to-End Encryption (E2EE) using local device keys before pushing.
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}

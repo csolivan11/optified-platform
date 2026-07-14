@@ -113,9 +113,59 @@
                 <h2 class="text-lg font-bold text-slate-100">Biomarker Health Metrics</h2>
                 <p class="mt-1 text-xs text-slate-450">Individual markers extracted by private Python processing modules.</p>
             </div>
-            <button class="mt-3 sm:mt-0 inline-flex items-center justify-center px-4 py-2 border border-navy-800 rounded-md text-xs font-medium text-slate-300 hover:text-white bg-navy-900 hover:bg-navy-850 transition">
-                Upload New Report
-            </button>
+        </div>
+
+        <!-- Interactive Uploader Widget -->
+        <div class="mb-6 p-4 border border-navy-900 rounded-lg bg-navy-950/40" x-data="{
+            dragging: false,
+            uploading: false,
+            status: '',
+            async uploadFile(event) {
+                const file = event.target.files ? event.target.files[0] : event.dataTransfer.files[0];
+                if (!file || file.type !== 'application/pdf') {
+                    this.status = 'Only PDF diagnostic reports are permitted.';
+                    return;
+                }
+                
+                this.uploading = true;
+                this.status = 'Generating secure GCS upload URL...';
+                
+                try {
+                    const urlResp = await fetch(`/api/documents/upload-url?filename=${encodeURIComponent(file.name)}&vendor=genova`);
+                    const urlData = await urlResp.json();
+                    
+                    this.status = 'Uploading directly to secure storage...';
+                    
+                    const putResp = await fetch(urlData.upload_url, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/pdf' },
+                        body: file
+                    });
+                    
+                    if (putResp.ok || putResp.status === 200 || putResp.status === 201) {
+                        this.status = 'Report submitted. Ingestion worker triggered.';
+                    } else {
+                        this.status = 'Upload failed. Secure storage check rejected.';
+                    }
+                } catch(e) {
+                    this.status = 'Error in secure signed GCS connection.';
+                } finally {
+                    this.uploading = false;
+                }
+            }
+        }">
+            <div class="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition"
+                 :class="dragging ? 'border-cyan-500 bg-cyan-950/10' : 'border-navy-800 bg-navy-900/10'"
+                 @dragover.prevent="dragging = true"
+                 @dragleave.prevent="dragging = false"
+                 @drop.prevent="dragging = false; uploadFile($event)">
+                <input type="file" id="file-upload-input" class="hidden" accept="application/pdf" @change="uploadFile($event)">
+                <label for="file-upload-input" class="cursor-pointer">
+                    <span class="text-xs text-slate-350 block mb-1">Drag and drop your Genova/LabCorp PDF here, or <span class="text-cyan-400 hover:underline">browse files</span></span>
+                    <span class="text-[10px] text-slate-550 block">Maximum upload size 10MB. Files verified under GCS Uniform IAM rules.</span>
+                </label>
+            </div>
+            <div x-show="status" class="mt-2 text-[10px] text-slate-400 font-medium" x-text="status"></div>
         </div>
 
         <div class="overflow-x-auto">
@@ -195,6 +245,97 @@
                 <div class="w-full h-2 rounded bg-navy-900 overflow-hidden relative">
                     <div class="h-full bg-emerald-500 rounded" style="width: 100%"></div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gut Health & Microbiome Panel (Microbiomix) -->
+    <div class="rounded-xl border border-navy-850 bg-navy-950 p-6 shadow-md">
+        <div class="flex items-center justify-between mb-4 border-b border-navy-900 pb-3">
+            <div>
+                <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+                    <span class="h-2.5 w-2.5 rounded-full bg-cyan-400"></span>
+                    Functional Gut Health & Microbiome Analysis
+                </h2>
+                <p class="text-xs text-slate-450 mt-0.5">Microbiome profiling extracted from Genova Microbiomix records.</p>
+            </div>
+            <span class="text-[10px] px-2 py-0.5 rounded border border-cyan-800 bg-cyan-950/40 text-cyan-400 uppercase tracking-wider font-semibold">Microbiomix Ingestion</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Diversity Index -->
+            <div class="p-4 rounded-lg bg-navy-900/40 border border-navy-900 text-center">
+                <span class="text-xs text-slate-400 block mb-2 uppercase tracking-wide">Shannon Diversity Index</span>
+                <span class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
+                    {{.DiversityIndex}}
+                </span>
+                <span class="text-[10px] text-emerald-400 block mt-2">Optimal Diversity (&gt; 7.5)</span>
+            </div>
+
+            <!-- Dysbiosis Index -->
+            <div class="p-4 rounded-lg bg-navy-900/40 border border-navy-900 text-center">
+                <span class="text-xs text-slate-400 block mb-2 uppercase tracking-wide">Dysbiosis Score</span>
+                <span class="text-3xl font-extrabold text-slate-100">
+                    {{.DysbiosisIndex}}
+                </span>
+                <span class="text-[10px] text-slate-500 block mt-2">Reference range &lt; 4.0</span>
+            </div>
+
+            <!-- Pathobionts Detected -->
+            <div class="p-4 rounded-lg bg-navy-900/40 border border-navy-900">
+                <span class="text-xs text-slate-400 block mb-2 uppercase tracking-wide">Detected Pathobionts</span>
+                <div class="flex flex-wrap gap-2 mt-1">
+                    {{range .Pathobionts}}
+                    <span class="text-[10px] px-2.5 py-1 rounded bg-yellow-500/10 text-yellow-400 font-mono border border-yellow-500/20">
+                        {{.}}
+                    </span>
+                    {{else}}
+                    <span class="text-[10px] text-emerald-400 font-medium">Zero Pathobionts Detected</span>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Metabolic Fitness & VO2 Max Card (PNOE) -->
+    <div class="rounded-xl border border-navy-850 bg-navy-950 p-6 shadow-md">
+        <div class="flex items-center justify-between mb-4 border-b border-navy-900 pb-3">
+            <div>
+                <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+                    <span class="h-2.5 w-2.5 rounded-full bg-cyan-400"></span>
+                    Cardiorespiratory & Metabolic Assessment
+                </h2>
+                <p class="text-xs text-slate-450 mt-0.5">Biometrics extracted from PNOE active and resting breath testing.</p>
+            </div>
+            <span class="text-[10px] px-2 py-0.5 rounded border border-cyan-800 bg-cyan-950/40 text-cyan-400 uppercase tracking-wider font-semibold">PNOE Ingestion</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- VO2 Peak Card -->
+            <div class="p-4 rounded-lg bg-navy-900/40 border border-navy-900 text-center">
+                <span class="text-xs text-slate-400 block mb-2 uppercase tracking-wide">Cardiorespiratory Fitness (VO2 Peak)</span>
+                <span class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
+                    {{.VO2Peak}} <span class="text-xs font-semibold text-slate-400">ml/min/kg</span>
+                </span>
+                <span class="text-[10px] text-emerald-400 block mt-2">Optimal Range &gt; 45.0 (Excellent)</span>
+            </div>
+
+            <!-- RMR Calories -->
+            <div class="p-4 rounded-lg bg-navy-900/40 border border-navy-900 text-center">
+                <span class="text-xs text-slate-400 block mb-2 uppercase tracking-wide">Resting Metabolic Rate (RMR)</span>
+                <span class="text-3xl font-extrabold text-slate-100">
+                    {{.RMRKcal}} <span class="text-xs font-semibold text-slate-500">kcal/day</span>
+                </span>
+                <span class="text-[10px] text-slate-500 block mt-2">Daily baseline caloric requirement</span>
+            </div>
+
+            <!-- RER Resting -->
+            <div class="p-4 rounded-lg bg-navy-900/40 border border-navy-900 text-center">
+                <span class="text-xs text-slate-400 block mb-2 uppercase tracking-wide">Resting Substrate Exchange (RER)</span>
+                <span class="text-3xl font-extrabold text-slate-100">
+                    {{.RERResting}}
+                </span>
+                <span class="text-[10px] text-cyan-400 block mt-2">Zone 2 Fat oxidation indicator</span>
             </div>
         </div>
     </div>
