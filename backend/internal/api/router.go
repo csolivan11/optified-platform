@@ -89,6 +89,7 @@ func ConfigureRouter() *chi.Mux {
 			r.Get("/knowsitall/graph", HandleGetKnowledgeGraph)
 			r.Get("/knowsitall/export-citations", HandleExportCitations)
 			r.Post("/knowsitall/upload-paper", HandleUploadPaperPDF)
+			r.Post("/webhook/quest", HandleQuestIngest)
 		})
 	})
 
