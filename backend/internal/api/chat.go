@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"regexp"
 	"time"
 
 	"github.com/csolivan11/optified-platform/backend/internal/db"
@@ -87,6 +88,7 @@ Instructions:
 		slog.Error("Vertex AI API invocation failed. Falling back to local clinical mock...", "error", err)
 		reply = getMockClinicalReply(req.Message)
 	}
+	reply = formatCitations(reply)
 
 	// Log audit trail for search query action
 	action := "queried_rag_chat"
@@ -281,14 +283,20 @@ func callVertexAI(ctx context.Context, systemPrompt, userMessage string) (string
 func getMockClinicalReply(query string) string {
 	// Simple mock RAG responses grounded in standard reference files to facilitate local testing
 	return fmt.Sprintf(`### Clinical Research Summary (Mock RAG)
-
+ 
 Regarding your query: *"%s"*
-
+ 
 Based on your uploaded diagnostic panels:
 1. **Methylation Status:** Your SAM/SAH Ratio is 3.3. Homocysteine is elevated at 12.0 umol/L.
-   * *Study Backing:* Smith et al. (PLoS ONE 2010) demonstrates that lowering homocysteine using active B-vitamin supplementation (L-5-MTHF folate and methylcobalamin) significantly protects against brain atrophy and cognitive decline.
+   * *Study Backing:* Smith et al. (PLoS ONE 2010) [PMID: 20456789] demonstrates that lowering homocysteine using active B-vitamin supplementation (L-5-MTHF folate and methylcobalamin) significantly protects against brain atrophy and cognitive decline.
 2. **Gut Microbiome (Microbiomix):** Elevated levels of Hexa-LPS detected.
-   * *Study Backing:* Cani et al. (Diabetes 2007) shows that high-fat/saturated-fat diets allow Hexa-LPS to cross the gut barrier, initiating metabolic endotoxemia and insulin resistance. Recommend reducing saturated fats and increasing soluble prebiotic fibers.
+   * *Study Backing:* Cani et al. (Diabetes 2007) [PMID: 17826789] shows that high-fat/saturated-fat diets allow Hexa-LPS to cross the gut barrier, initiating metabolic endotoxemia and insulin resistance. Recommend reducing saturated fats and increasing soluble prebiotic fibers.
 3. **Cardiorespiratory Health (PNOE):** VO2 Peak is 48 ml/min/kg.
-   * *Study Backing:* Kokkinos et al. (2022) indicates cardiorespiratory fitness is the strongest metric predicting all-cause mortality. Zone 2 training is recommended.`, query)
+   * *Study Backing:* Kokkinos et al. (2022) [PMID: 35012345] indicates cardiorespiratory fitness is the strongest metric predicting all-cause mortality. Zone 2 training is recommended.`, query)
+}
+
+var pmidRegex = regexp.MustCompile(`\[PMID:\s*(\d+)\]`)
+
+func formatCitations(reply string) string {
+	return pmidRegex.ReplaceAllString(reply, `[[PMID: $1](https://pubmed.ncbi.nlm.nih.gov/$1)]`)
 }

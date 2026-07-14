@@ -77,6 +77,45 @@
                     <p class="text-xs text-slate-500 text-center py-4">No active supplement protocols.</p>
                     {{end}}
                 </div>
+                <!-- 30-Day Compliance Browser -->
+                <div class="mt-4 pt-4 border-t border-navy-900">
+                    <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">30-Day Compliance Index</h4>
+                    <div class="flex items-center gap-1">
+                        <div class="grid grid-cols-10 gap-1">
+                            <span class="h-2 w-2 rounded-full bg-emerald-500" title="Day 1: Compliant"></span>
+                            <span class="h-2 w-2 rounded-full bg-emerald-500" title="Day 2: Compliant"></span>
+                            <span class="h-2 w-2 rounded-full bg-emerald-500" title="Day 3: Compliant"></span>
+                            <span class="h-2 w-2 rounded-full bg-red-500" title="Day 4: Non-compliant"></span>
+                            <span class="h-2 w-2 rounded-full bg-emerald-500" title="Day 5: Compliant"></span>
+                            <span class="h-2 w-2 rounded-full bg-emerald-500" title="Day 6: Compliant"></span>
+                            <span class="h-2 w-2 rounded-full bg-emerald-500" title="Day 7: Compliant"></span>
+                            <span class="h-2 w-2 rounded-full bg-emerald-500" title="Day 8: Compliant"></span>
+                            <span class="h-2 w-2 rounded-full bg-red-500" title="Day 9: Non-compliant"></span>
+                            <span class="h-2 w-2 rounded-full bg-emerald-500" title="Day 10: Compliant"></span>
+                            <span class="h-2 w-2 rounded-full bg-emerald-500" title="Day 11: Compliant"></span>
+                            <span class="h-2 w-2 rounded-full bg-emerald-500" title="Day 12: Compliant"></span>
+                            <span class="h-2 w-2 rounded-full bg-emerald-500" title="Day 13: Compliant"></span>
+                            <span class="h-2 w-2 rounded-full bg-emerald-500" title="Day 14: Compliant"></span>
+                            <span class="h-2 w-2 rounded-full bg-emerald-500" title="Day 15: Compliant"></span>
+                            <span class="h-2 w-2 rounded-full bg-emerald-500" title="Day 16: Compliant"></span>
+                            <span class="h-2 w-2 rounded-full bg-emerald-500" title="Day 17: Compliant"></span>
+                            <span class="h-2 w-2 rounded-full bg-red-500" title="Day 18: Non-compliant"></span>
+                            <span class="h-2 w-2 rounded-full bg-emerald-500" title="Day 19: Compliant"></span>
+                            <span class="h-2 w-2 rounded-full bg-emerald-500" title="Day 20: Compliant"></span>
+                            <span class="h-2 w-2 rounded-full bg-emerald-500" title="Day 21: Compliant"></span>
+                            <span class="h-2 w-2 rounded-full bg-emerald-500" title="Day 22: Compliant"></span>
+                            <span class="h-2 w-2 rounded-full bg-emerald-500" title="Day 23: Compliant"></span>
+                            <span class="h-2 w-2 rounded-full bg-emerald-500" title="Day 24: Compliant"></span>
+                            <span class="h-2 w-2 rounded-full bg-emerald-500" title="Day 25: Compliant"></span>
+                            <span class="h-2 w-2 rounded-full bg-emerald-500" title="Day 26: Compliant"></span>
+                            <span class="h-2 w-2 rounded-full bg-emerald-500" title="Day 27: Compliant"></span>
+                            <span class="h-2 w-2 rounded-full bg-emerald-500" title="Day 28: Compliant"></span>
+                            <span class="h-2 w-2 rounded-full bg-emerald-500" title="Day 29: Compliant"></span>
+                            <span class="h-2 w-2 rounded-full bg-emerald-500" title="Day 30: Compliant"></span>
+                        </div>
+                        <span class="text-xs text-emerald-400 font-bold ml-auto">90% Compliance</span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -179,33 +218,32 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-navy-900 text-sm">
-                    <!-- Row 1 -->
+                    {{range .Biomarkers}}
                     <tr>
-                        <td class="py-4 px-4 font-medium text-slate-200">apoB (Apolipoprotein B)</td>
-                        <td class="py-4 px-4">65 mg/dL</td>
-                        <td class="py-4 px-4">&lt; 70 mg/dL</td>
+                        <td class="py-4 px-4 font-medium text-slate-200">{{.DisplayName}}</td>
+                        <td class="py-4 px-4 font-mono text-slate-100">{{.Value}} {{.Unit}}</td>
+                        <td class="py-4 px-4 text-slate-350">
+                            {{if and .OptimalLow .OptimalHigh}}
+                            {{.OptimalLow}} - {{.OptimalHigh}} {{.Unit}}
+                            {{else if .OptimalHigh}}
+                            &lt; {{.OptimalHigh}} {{.Unit}}
+                            {{else if .OptimalLow}}
+                            &gt; {{.OptimalLow}} {{.Unit}}
+                            {{else}}
+                            General reference
+                            {{end}}
+                        </td>
                         <td class="py-4 px-4">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400">Optimal</span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{if eq .Status "optimal"}}bg-emerald-500/10 text-emerald-400{{else}}bg-yellow-500/10 text-yellow-400{{end}} capitalize">
+                                {{.Status}}
+                            </span>
                         </td>
                     </tr>
-                    <!-- Row 2 -->
+                    {{else}}
                     <tr>
-                        <td class="py-4 px-4 font-medium text-slate-200">hsCRP (High-Sensitivity CRP)</td>
-                        <td class="py-4 px-4">0.4 mg/L</td>
-                        <td class="py-4 px-4">&lt; 1.0 mg/L</td>
-                        <td class="py-4 px-4">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400">Optimal</span>
-                        </td>
+                        <td colspan="4" class="py-4 px-4 text-center text-xs text-slate-500">No parsed biomarker results loaded yet. Submit reports above to trigger analysis.</td>
                     </tr>
-                    <!-- Row 3 -->
-                    <tr>
-                        <td class="py-4 px-4 font-medium text-slate-200">Testosterone (Total)</td>
-                        <td class="py-4 px-4">850 ng/dL</td>
-                        <td class="py-4 px-4">600 - 900 ng/dL</td>
-                        <td class="py-4 px-4">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400">Optimal</span>
-                        </td>
-                    </tr>
+                    {{end}}
                 </tbody>
             </table>
         </div>
@@ -430,14 +468,14 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="p-4 rounded-lg bg-navy-950/60 border border-navy-900">
                 <h3 class="text-xs font-bold uppercase text-slate-450 mb-4 tracking-wider">Sleep Quality Scores</h3>
                 <div class="relative h-32 w-full">
                     <svg viewBox="0 0 350 120" class="w-full h-full">
-                        <line x1="20" y1="10" x2="350" y2="10" stroke="#1e293b" stroke-dasharray="2"/>
-                        <line x1="20" y1="60" x2="350" y2="60" stroke="#1e293b" stroke-dasharray="2"/>
-                        <line x1="20" y1="110" x2="350" y2="110" stroke="#1e293b" stroke-width="1"/>
+                        <line x1="20" y1="10" x2="350" y2="10" stroke="currentColor" class="text-navy-900/40 dark:text-navy-900/80" stroke-dasharray="2"/>
+                        <line x1="20" y1="60" x2="350" y2="60" stroke="currentColor" class="text-navy-900/40 dark:text-navy-900/80" stroke-dasharray="2"/>
+                        <line x1="20" y1="110" x2="350" y2="110" stroke="currentColor" class="text-navy-900/40 dark:text-navy-900/80" stroke-width="1"/>
                         <path d="M 20 80 L 70 70 L 120 90 L 175 60 L 230 50 L 285 58 L 340 30" 
                               fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
                         <circle cx="20" cy="80" r="4" fill="#10b981"/>
@@ -458,9 +496,9 @@
                 <h3 class="text-xs font-bold uppercase text-slate-450 mb-4 tracking-wider">Heart Rate Variability (HRV - ms)</h3>
                 <div class="relative h-32 w-full">
                     <svg viewBox="0 0 350 120" class="w-full h-full">
-                        <line x1="20" y1="10" x2="350" y2="10" stroke="#1e293b" stroke-dasharray="2"/>
-                        <line x1="20" y1="60" x2="350" y2="60" stroke="#1e293b" stroke-dasharray="2"/>
-                        <line x1="20" y1="110" x2="350" y2="110" stroke="#1e293b" stroke-width="1"/>
+                        <line x1="20" y1="10" x2="350" y2="10" stroke="currentColor" class="text-navy-900/40 dark:text-navy-900/80" stroke-dasharray="2"/>
+                        <line x1="20" y1="60" x2="350" y2="60" stroke="currentColor" class="text-navy-900/40 dark:text-navy-900/80" stroke-dasharray="2"/>
+                        <line x1="20" y1="110" x2="350" y2="110" stroke="currentColor" class="text-navy-900/40 dark:text-navy-900/80" stroke-width="1"/>
                         <path d="M 20 90 L 70 82 L 120 94 L 175 70 L 230 62 L 285 74 L 340 50" 
                               fill="none" stroke="#06b6d4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
                         <circle cx="20" cy="90" r="4" fill="#06b6d4"/>
@@ -470,6 +508,32 @@
                         <circle cx="230" cy="62" r="4" fill="#06b6d4"/>
                         <circle cx="285" cy="74" r="4" fill="#06b6d4"/>
                         <circle cx="340" cy="50" r="4" fill="#22d3ee"/>
+                    </svg>
+                </div>
+                <div class="flex justify-between text-[10px] text-slate-500 mt-2 px-4">
+                    <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                </div>
+            </div>
+
+            <!-- Active Energy & Steps SVG Chart -->
+            <div class="p-4 rounded-lg bg-navy-950/60 border border-navy-900">
+                <h3 class="text-xs font-bold uppercase text-slate-455 mb-4 tracking-wider text-amber-500">Active Energy Burn (kcal)</h3>
+                <div class="relative h-32 w-full">
+                    <svg viewBox="0 0 350 120" class="w-full h-full">
+                        <line x1="20" y1="10" x2="350" y2="10" stroke="currentColor" class="text-navy-900/40 dark:text-navy-900/80" stroke-dasharray="2"/>
+                        <line x1="20" y1="60" x2="350" y2="60" stroke="currentColor" class="text-navy-900/40 dark:text-navy-900/80" stroke-dasharray="2"/>
+                        <line x1="20" y1="110" x2="350" y2="110" stroke="currentColor" class="text-navy-900/40 dark:text-navy-900/80" stroke-width="1"/>
+                        
+                        <path d="M 20 100 L 70 85 L 120 70 L 175 90 L 230 65 L 285 50 L 340 40" 
+                              fill="none" stroke="#f59e0b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                        
+                        <circle cx="20" cy="100" r="4" fill="#f59e0b"/>
+                        <circle cx="70" cy="85" r="4" fill="#f59e0b"/>
+                        <circle cx="120" cy="70" r="4" fill="#f59e0b"/>
+                        <circle cx="175" cy="90" r="4" fill="#f59e0b"/>
+                        <circle cx="230" cy="65" r="4" fill="#f59e0b"/>
+                        <circle cx="285" cy="50" r="4" fill="#f59e0b"/>
+                        <circle cx="340" cy="40" r="4" fill="#fbbf24"/>
                     </svg>
                 </div>
                 <div class="flex justify-between text-[10px] text-slate-500 mt-2 px-4">

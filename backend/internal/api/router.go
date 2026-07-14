@@ -46,6 +46,7 @@ func ConfigureRouter() *chi.Mux {
 		// Public health check and login action
 		r.Get("/health", HandleHealth)
 		r.Post("/auth/login", HandleLogin)
+		r.Post("/auth/mfa", HandleVerifyMFA)
 		r.Post("/webhooks/ingest", HandleWebhookIngest)
 
 		// Authenticated API Routes
@@ -79,6 +80,9 @@ func ConfigureRouter() *chi.Mux {
 			// Audit Logs
 			r.Get("/audit-logs/{clientId}", HandleListAuditLogs)
 			r.Get("/audit-logs/{clientId}/export", HandleExportAuditLogs)
+
+			// Clinician Assignment
+			r.Post("/clients/assign", HandleAssignClinician)
 		})
 	})
 

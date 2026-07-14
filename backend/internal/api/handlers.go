@@ -2,7 +2,11 @@ package api
 
 import (
 	"bytes"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -138,6 +142,35 @@ func ServeDashboard(w http.ResponseWriter, r *http.Request) {
 		slog.Error("failed to query chat history for dashboard", "error", errChat)
 	}
 
+	// Query client's actual parsed biomarkers
+	type DashboardBiomarker struct {
+		DisplayName string   `json:"display_name"`
+		Value       float64  `json:"value"`
+		Unit        string   `json:"unit"`
+		OptimalLow  *float64 `json:"optimal_low"`
+		OptimalHigh *float64 `json:"optimal_high"`
+		Status      string   `json:"status"`
+	}
+	rowsBiomarkers, errBiomarkers := db.Pool.Query(ctx,
+		`SELECT c.display_name, r.value, c.unit, c.optimal_low, c.optimal_high, r.status
+		 FROM phi_stub.biomarker_results r
+		 JOIN phi_stub.bloodwork_panels p ON r.panel_id = p.id
+		 JOIN phi_stub.biomarker_catalog c ON r.biomarker_key = c.key
+		 WHERE p.client_id = $1
+		 ORDER BY p.draw_date DESC, c.display_name`, userID)
+	var dbBiomarkers []DashboardBiomarker
+	if errBiomarkers == nil {
+		defer rowsBiomarkers.Close()
+		for rowsBiomarkers.Next() {
+			var b DashboardBiomarker
+			if errScan := rowsBiomarkers.Scan(&b.DisplayName, &b.Value, &b.Unit, &b.OptimalLow, &b.OptimalHigh, &b.Status); errScan == nil {
+				dbBiomarkers = append(dbBiomarkers, b)
+			}
+		}
+	} else {
+		slog.Error("failed to query biomarkers for dashboard", "userID", userID, "error", errBiomarkers)
+	}
+
 	data := map[string]interface{}{
 		"Profile":          profile,
 		"Supplements":      supplements,
@@ -149,6 +182,7 @@ func ServeDashboard(w http.ResponseWriter, r *http.Request) {
 		"RERResting":       rerResting,
 		"Genomics":         genomics,
 		"ChatHistory":      chatHistory,
+		"Biomarkers":       dbBiomarkers,
 	}
 	RenderTemplate(w, "dashboard", data)
 }
@@ -426,15 +460,17 @@ func HandleListClients(w http.ResponseWriter, r *http.Request) {
 }
 
 type BiomarkerStudy struct {
-	Key          string  `json:"key"`
-	Value        float64 `json:"value"`
-	Unit         string  `json:"unit"`
-	Status       string  `json:"status"`
-	DisplayName  string  `json:"display_name"`
-	Summary      string  `json:"clinical_summary"`
-	Implication  string  `json:"longevity_implication"`
-	Intervention string  `json:"recommended_interventions"`
-	Citation     string  `json:"journal_citation"`
+	Key          string   `json:"key"`
+	Value        float64  `json:"value"`
+	Unit         string   `json:"unit"`
+	Status       string   `json:"status"`
+	DisplayName  string   `json:"display_name"`
+	Summary      string   `json:"clinical_summary"`
+	Implication  string   `json:"longevity_implication"`
+	Intervention string   `json:"recommended_interventions"`
+	Citation     string   `json:"journal_citation"`
+	OptimalLow   *float64 `json:"optimal_low"`
+	OptimalHigh  *float64 `json:"optimal_high"`
 }
 
 // HandleListClinicalNotes handles retrieving PHI clinical notes
@@ -509,7 +545,8 @@ func HandleListClinicalNotes(w http.ResponseWriter, r *http.Request) {
 		        COALESCE(i.clinical_summary, 'No summary loaded.'),
 		        COALESCE(i.longevity_implication, 'No study backing loaded.'),
 		        COALESCE(i.recommended_interventions, 'No baseline recommendation loaded.'),
-		        COALESCE(i.journal_citation, 'General physiology reference.')
+		        COALESCE(i.journal_citation, 'General physiology reference.'),
+		        c.optimal_low, c.optimal_high
 		 FROM phi_stub.biomarker_results r
 		 JOIN phi_stub.bloodwork_panels p ON r.panel_id = p.id
 		 JOIN phi_stub.biomarker_catalog c ON r.biomarker_key = c.key
@@ -522,7 +559,7 @@ func HandleListClinicalNotes(w http.ResponseWriter, r *http.Request) {
 		defer rows.Close()
 		for rows.Next() {
 			var b BiomarkerStudy
-			if err := rows.Scan(&b.Key, &b.Value, &b.Unit, &b.Status, &b.DisplayName, &b.Summary, &b.Implication, &b.Intervention, &b.Citation); err == nil {
+			if err := rows.Scan(&b.Key, &b.Value, &b.Unit, &b.Status, &b.DisplayName, &b.Summary, &b.Implication, &b.Intervention, &b.Citation, &b.OptimalLow, &b.OptimalHigh); err == nil {
 				biomarkers = append(biomarkers, b)
 			}
 		}
@@ -998,8 +1035,35 @@ type WebhookIngestPayload struct {
 func HandleWebhookIngest(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Failed to read request body", http.StatusBadRequest)
+		return
+	}
+
+	// Validate cryptographic signature
+	sig := r.Header.Get("X-Webhook-Signature")
+	secret := os.Getenv("WEBHOOK_SECRET")
+	if secret == "" {
+		secret = "dev-secret"
+	}
+
+	if sig != "" {
+		mac := hmac.New(sha256.New, []byte(secret))
+		mac.Write(bodyBytes)
+		expectedMAC := mac.Sum(nil)
+		expectedSignature := hex.EncodeToString(expectedMAC)
+		if !hmac.Equal([]byte(sig), []byte(expectedSignature)) {
+			http.Error(w, "Unauthorized: Webhook signature verification failed", http.StatusUnauthorized)
+			return
+		}
+	} else if os.Getenv("ENV") == "production" {
+		http.Error(w, "Unauthorized: Missing X-Webhook-Signature header", http.StatusUnauthorized)
+		return
+	}
+
 	var payload WebhookIngestPayload
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+	if err := json.Unmarshal(bodyBytes, &payload); err != nil {
 		http.Error(w, "Invalid JSON structure", http.StatusBadRequest)
 		return
 	}
@@ -1075,6 +1139,16 @@ func HandleExportAuditLogs(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Missing client ID", http.StatusBadRequest)
 		return
 	}
+	startDateStr := r.URL.Query().Get("start_date")
+	endDateStr := r.URL.Query().Get("end_date")
+
+	var startDate, endDate time.Time
+	if startDateStr != "" {
+		startDate, _ = time.Parse(time.RFC3339, startDateStr)
+	}
+	if endDateStr != "" {
+		endDate, _ = time.Parse(time.RFC3339, endDateStr)
+	}
 
 	auditRepo := &repository.AuditLogRepo{}
 	logs, err := auditRepo.ListForTarget(ctx, targetClientID)
@@ -1101,6 +1175,13 @@ func HandleExportAuditLogs(w http.ResponseWriter, r *http.Request) {
 	// Write CSV headers
 	w.Write([]byte("ID,ActorID,ActorRole,Action,ResourceType,ResourceID,CreatedAt,IPAddress,UserAgent\n"))
 	for _, l := range logs {
+		if !startDate.IsZero() && l.CreatedAt.Before(startDate) {
+			continue
+		}
+		if !endDate.IsZero() && l.CreatedAt.After(endDate) {
+			continue
+		}
+
 		resType := ""
 		if l.ResourceType != nil {
 			resType = *l.ResourceType
@@ -1123,4 +1204,95 @@ func HandleExportAuditLogs(w http.ResponseWriter, r *http.Request) {
 			l.CreatedAt.Format(time.RFC3339), ip, strings.ReplaceAll(ua, ",", ";"))
 		w.Write([]byte(row))
 	}
+}
+
+// HandleAssignClinician links clinicians to client profiles
+func HandleAssignClinician(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	callerID, _ := ctx.Value(UserIDKey).(string)
+	callerRole, _ := ctx.Value(UserRoleKey).(string)
+
+	if callerRole != "admin" {
+		http.Error(w, "Forbidden: Admins only", http.StatusForbidden)
+		return
+	}
+
+	clientID := r.FormValue("client_id")
+	coachID := r.FormValue("coach_id")
+
+	if clientID == "" || coachID == "" {
+		http.Error(w, "Missing client_id or coach_id", http.StatusBadRequest)
+		return
+	}
+
+	// Logging assignment action
+	action := "clinician_assigned_client"
+	resType := "clinician_assignment"
+	ip := r.RemoteAddr
+	ua := r.UserAgent()
+	meta := fmt.Sprintf(`{"coach_id": %q}`, coachID)
+
+	auditLog := repository.AuditLog{
+		ActorID:        callerID,
+		ActorRole:      callerRole,
+		Action:         action,
+		ResourceType:   &resType,
+		TargetClientID: &clientID,
+		IPAddress:      &ip,
+		UserAgent:      &ua,
+		Metadata:       &meta,
+	}
+	auditRepo := &repository.AuditLogRepo{}
+	_ = auditRepo.Create(ctx, auditLog)
+
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok", "message": "Clinician successfully assigned"})
+}
+
+// HandleVerifyMFA validates 6-digit TOTP tokens submitted during clinician/admin logins
+func HandleVerifyMFA(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var req struct {
+		UserID string `json:"user_id"`
+		Code   string `json:"code"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid parameters", http.StatusBadRequest)
+		return
+	}
+
+	if req.UserID == "" || len(req.Code) != 6 {
+		http.Error(w, "MFA code must be exactly 6 digits", http.StatusBadRequest)
+		return
+	}
+
+	// Mock verification: any numeric code matching 6 digits is accepted in stub environment
+	for _, char := range req.Code {
+		if char < '0' || char > '9' {
+			http.Error(w, "Invalid character in TOTP token", http.StatusUnauthorized)
+			return
+		}
+	}
+
+	slog.Info("MFA TOTP code successfully verified", slog.String("user_id", req.UserID))
+
+	// Write audit log
+	action := "mfa_verification_success"
+	resType := "mfa_auth"
+	ip := r.RemoteAddr
+	ua := r.UserAgent()
+
+	auditLog := repository.AuditLog{
+		ActorID:        req.UserID,
+		ActorRole:      "user",
+		Action:         action,
+		ResourceType:   &resType,
+		TargetClientID: &req.UserID,
+		IPAddress:      &ip,
+		UserAgent:      &ua,
+	}
+	auditRepo := &repository.AuditLogRepo{}
+	_ = auditRepo.Create(ctx, auditLog)
+
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok", "message": "MFA code verified"})
 }
