@@ -117,8 +117,14 @@ func HandleKnowsItAllChat(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var p JournalPublication
 		if err := rows.Scan(&p.ID, &p.JournalTitle, &p.ImpactFactor, &p.Title, &p.Authors, &p.Citation, &p.PMID, &p.Abstract, &p.CountryOrigin); err == nil {
-			citationText := fmt.Sprintf("- **%s** (%s) by %s. Impact Factor: %.1f [PMID: %s] | Origin: %s\n  *Abstract:* %s",
-				p.Title, p.Citation, p.Authors, p.ImpactFactor, p.PMID, p.CountryOrigin, p.Abstract)
+			confidence := "Standard Quality"
+			if p.ImpactFactor >= 80.0 {
+				confidence = "Tier 1 - High Confidence Grounding"
+			} else if p.ImpactFactor >= 30.0 {
+				confidence = "Tier 2 - Elevated Confidence Grounding"
+			}
+			citationText := fmt.Sprintf("- **%s** (%s) [%s]. Impact Factor: %.1f [PMID: %s] | Hub: %s\n  *Abstract:* %s",
+				p.Title, p.Citation, confidence, p.ImpactFactor, p.PMID, p.CountryOrigin, p.Abstract)
 			contextParts = append(contextParts, citationText)
 			citations = append(citations, fmt.Sprintf("%s [PMID: %s]", p.Citation, p.PMID))
 		}

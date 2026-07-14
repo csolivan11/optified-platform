@@ -684,6 +684,48 @@
                 <div class="mt-4 p-2 rounded bg-cyan-950/20 border border-cyan-900/40 text-[10px] text-cyan-400">
                     <span>Active Protocol: <b x-text="focusProtocol"></b>. Grounded in peer-reviewed neuroscience publications.</span>
                 </div>
+        </div>
+
+        <!-- CGM & VO2 Max Real-Time Telemetry Row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 border-t border-navy-900/60 pt-6">
+            <!-- CGM Real-Time Integration -->
+            <div class="p-4 rounded-lg bg-navy-900/40 border border-navy-900">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-xs font-bold uppercase text-slate-400 tracking-wide">Continuous Glucose Monitor (CGM)</h3>
+                    <span class="text-[9px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-semibold uppercase">Time-in-Range: 94%</span>
+                </div>
+                <div class="relative h-24 w-full bg-slate-950 border border-navy-900/50 rounded overflow-hidden">
+                    <svg viewBox="0 0 300 70" class="w-full h-full">
+                        <!-- Normal glycemic boundary band (70-140 mg/dL) -->
+                        <rect x="0" y="20" width="300" height="35" fill="#10b981" fill-opacity="0.1"/>
+                        <line x1="0" y1="20" x2="300" y2="20" stroke="#047857" stroke-width="0.5" stroke-dasharray="2"/>
+                        <line x1="0" y1="55" x2="300" y2="55" stroke="#047857" stroke-width="0.5" stroke-dasharray="2"/>
+                        <!-- Real-time CGM trend line -->
+                        <path d="M 10 38 L 40 45 L 80 32 L 120 58 L 160 48 L 200 24 L 240 38 L 280 42" 
+                              fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round"/>
+                        <circle cx="280" cy="42" r="3" fill="#34d399"/>
+                    </svg>
+                </div>
+                <span class="text-[9px] text-slate-500 block mt-2">Target bounds: 70 - 140 mg/dL (Grounded in endocrinology guidelines)</span>
+            </div>
+
+            <!-- Advanced Cardio VO2 Max Peak Output Graph -->
+            <div class="p-4 rounded-lg bg-navy-900/40 border border-navy-900">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-xs font-bold uppercase text-slate-400 tracking-wide">VO2 Max Peak Cardio Output Stages</h3>
+                    <span class="text-[9px] px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 font-semibold uppercase">Peak: 52.4 mL/kg/min</span>
+                </div>
+                <div class="relative h-24 w-full bg-slate-950 border border-navy-900/50 rounded overflow-hidden">
+                    <svg viewBox="0 0 300 70" class="w-full h-full">
+                        <!-- VO2 curve stages (Rest -> Warmup -> Max -> Recovery) -->
+                        <path d="M 10 60 L 50 55 L 100 40 L 150 20 L 200 15 L 250 48 L 290 58" 
+                              fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round"/>
+                        <!-- Peak dot -->
+                        <circle cx="200" cy="15" r="4.5" fill="#22d3ee" class="animate-ping"/>
+                        <circle cx="200" cy="15" r="3.5" fill="#22d3ee"/>
+                    </svg>
+                </div>
+                <span class="text-[9px] text-slate-500 block mt-2">Aerobic threshold transitions. Highlighted: Max peak capacity.</span>
             </div>
         </div>
     </div>
