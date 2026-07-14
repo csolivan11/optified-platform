@@ -99,6 +99,24 @@ func HandleWearablesSync(w http.ResponseWriter, r *http.Request) {
 			slog.Error("failed to upsert wearable metric", "metric", m.Metric, "error", err)
 			continue
 		}
+
+		if m.Metric == "sleep_score" || m.Metric == "hrv_rmssd" {
+			col := "sleep_score"
+			if m.Metric == "hrv_rmssd" {
+				col = "hrv_rmssd"
+			}
+			query := fmt.Sprintf(`
+				INSERT INTO phi_stub.sleep_logs (client_id, sleep_date, %[1]s)
+				VALUES ($1, $2, $3)
+				ON CONFLICT (client_id, sleep_date)
+				DO UPDATE SET %[1]s = EXCLUDED.%[1]s;`, col)
+			
+			_, err = tx.Exec(ctx, query, clientID, m.RecordedAt.Format("2006-01-02"), m.Value)
+			if err != nil {
+				slog.Error("failed to sync sleep log metrics", "col", col, "error", err)
+			}
+		}
+
 		upsertCount++
 	}
 

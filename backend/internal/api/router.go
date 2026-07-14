@@ -46,6 +46,7 @@ func ConfigureRouter() *chi.Mux {
 		// Public health check and login action
 		r.Get("/health", HandleHealth)
 		r.Post("/auth/login", HandleLogin)
+		r.Post("/webhooks/ingest", HandleWebhookIngest)
 
 		// Authenticated API Routes
 		r.Group(func(r chi.Router) {
@@ -70,9 +71,14 @@ func ConfigureRouter() *chi.Mux {
 			// Supplement Intake Compliance Toggling
 			r.Post("/supplements/toggle", HandleToggleSupplement)
 			r.Post("/supplements/schedule", HandleCreateSupplementSchedule)
+			r.Post("/supplements/deactivate", HandleDeactivateSupplement)
+
+			// Custom Target Ranges Config
+			r.Post("/biomarkers/custom-range", HandleSetCustomBiomarkerRange)
 
 			// Audit Logs
 			r.Get("/audit-logs/{clientId}", HandleListAuditLogs)
+			r.Get("/audit-logs/{clientId}/export", HandleExportAuditLogs)
 		})
 	})
 

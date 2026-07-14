@@ -340,6 +340,45 @@
         </div>
     </div>
 
+    <!-- Genomics & Methylation Insights Panel -->
+    <div class="rounded-xl border border-navy-850 bg-navy-950 p-6 shadow-md">
+        <div class="flex items-center justify-between mb-4 border-b border-navy-900 pb-3">
+            <div>
+                <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+                    <span class="h-2.5 w-2.5 rounded-full bg-emerald-450"></span>
+                    Genomics & Methylation Pathway Diagnostics
+                </h2>
+                <p class="text-xs text-slate-450 mt-0.5">High-impact SNP variants matched against clinical methylation rules.</p>
+            </div>
+            <span class="text-[10px] px-2 py-0.5 rounded border border-emerald-800 bg-emerald-950/40 text-emerald-400 uppercase tracking-wider font-semibold">Genomic Sequencing</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {{range .Genomics}}
+            <div class="p-4 rounded-lg bg-navy-900/40 border border-navy-900">
+                <div class="flex justify-between items-start mb-2">
+                    <span class="text-sm font-bold text-slate-200">{{.GeneName}} Gene</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-yellow-500/10 text-yellow-400 font-mono border border-yellow-500/20">
+                        {{.Genotype}}
+                    </span>
+                </div>
+                <p class="text-xs text-slate-400 leading-relaxed mb-3">{{.Interpretation}}</p>
+                <div class="space-y-1">
+                    <span class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Clinical Interventions</span>
+                    {{range .ActionSteps}}
+                    <div class="flex items-center gap-2 text-xs text-slate-350">
+                        <span class="h-1.5 w-1.5 rounded-full bg-cyan-400"></span>
+                        <span>{{.}}</span>
+                    </div>
+                    {{end}}
+                </div>
+            </div>
+            {{else}}
+            <p class="text-xs text-slate-500 text-center py-4 col-span-2">No genomic profiling data linked to this profile.</p>
+            {{end}}
+        </div>
+    </div>
+
     <!-- Wearables Sync & HRV Trends Section -->
     <div class="rounded-xl border border-navy-850 bg-navy-950 p-6 shadow-md" x-data="{
         syncing: false,
@@ -445,7 +484,11 @@
         message: '',
         loading: false,
         messages: [
+            {{range .ChatHistory}}
+            { sender: {{.Sender | printf "%q"}}, text: {{.MessageText | printf "%q"}} },
+            {{else}}
             { sender: 'ai', text: 'Welcome to your secure Optified RAG Chat. Ask me anything about your parsed laboratory biomarkers, genomic variants, or resting metabolic rate assessments.' }
+            {{end}}
         ],
         async sendMessage() {
             if (!this.message.trim()) return;

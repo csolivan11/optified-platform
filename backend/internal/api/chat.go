@@ -108,6 +108,16 @@ Instructions:
 	auditRepo := &repository.AuditLogRepo{}
 	_ = auditRepo.Create(ctx, auditLog)
 
+	// Save Chat History to PostgreSQL (HIPAA / GDPR logging)
+	_, errSaveChat := db.Pool.Exec(ctx,
+		`INSERT INTO phi_stub.chat_history (client_id, sender, message_text)
+		 VALUES ($1, 'user', $2), ($1, 'ai', $3);`,
+		clientID, req.Message, reply,
+	)
+	if errSaveChat != nil {
+		slog.Error("failed to write chat history to database", "client_id", clientID, "error", errSaveChat)
+	}
+
 	writeJSON(w, http.StatusOK, ChatResponse{Reply: reply})
 }
 

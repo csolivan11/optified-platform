@@ -109,6 +109,35 @@ func ServeDashboard(w http.ResponseWriter, r *http.Request) {
 		rerResting = 0.78
 	}
 
+	// Query client's genomics insights
+	genomics, errGenomics := FetchGenomicRecommendations(ctx, userID)
+	if errGenomics != nil {
+		slog.Error("failed to fetch genomic insights for dashboard", "userID", userID, "error", errGenomics)
+	}
+
+	// Query client's past chat history
+	type ChatMessage struct {
+		Sender      string `json:"sender"`
+		MessageText string `json:"message_text"`
+	}
+	rowsChat, errChat := db.Pool.Query(ctx, 
+		`SELECT sender, message_text 
+		 FROM phi_stub.chat_history 
+		 WHERE client_id = $1 
+		 ORDER BY created_at ASC LIMIT 50`, userID)
+	var chatHistory []ChatMessage
+	if errChat == nil {
+		defer rowsChat.Close()
+		for rowsChat.Next() {
+			var m ChatMessage
+			if errScan := rowsChat.Scan(&m.Sender, &m.MessageText); errScan == nil {
+				chatHistory = append(chatHistory, m)
+			}
+		}
+	} else {
+		slog.Error("failed to query chat history for dashboard", "error", errChat)
+	}
+
 	data := map[string]interface{}{
 		"Profile":          profile,
 		"Supplements":      supplements,
@@ -118,6 +147,8 @@ func ServeDashboard(w http.ResponseWriter, r *http.Request) {
 		"VO2Peak":          vo2Peak,
 		"RMRKcal":          rmrKcal,
 		"RERResting":       rerResting,
+		"Genomics":         genomics,
+		"ChatHistory":      chatHistory,
 	}
 	RenderTemplate(w, "dashboard", data)
 }
@@ -425,6 +456,16 @@ func HandleListClinicalNotes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Clinician Multi-tenant assignment safeguard
+	if callerRole == "coach" {
+		var exists bool
+		err := db.Pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM public.profiles WHERE id = $1 AND role = 'client')", targetClientID).Scan(&exists)
+		if err != nil || !exists {
+			http.Error(w, "Forbidden: Client profile not assigned to your clinician group", http.StatusForbidden)
+			return
+		}
+	}
+
 	cnRepo := &repository.ClinicalNotesRepo{}
 	notes, err := cnRepo.ListForClient(ctx, targetClientID)
 	if err != nil {
@@ -489,11 +530,61 @@ func HandleListClinicalNotes(w http.ResponseWriter, r *http.Request) {
 		slog.Error("failed to query biomarker study details", "client_id", targetClientID, "error", err)
 	}
 
+	// Query client's supplement schedules
+	type SupplementSchedule struct {
+		ID             string `json:"id"`
+		SupplementName string `json:"supplement_name"`
+		Dosage         string `json:"dosage"`
+		Frequency      string `json:"frequency"`
+		Active         bool   `json:"active"`
+	}
+	rowsSupps, errSupps := db.Pool.Query(ctx, 
+		`SELECT id, supplement_name, dosage, frequency, active
+		 FROM phi_stub.supplement_schedules
+		 WHERE client_id = $1 AND active = true`, targetClientID)
+	var supplements []SupplementSchedule
+	if errSupps == nil {
+		defer rowsSupps.Close()
+		for rowsSupps.Next() {
+			var s SupplementSchedule
+			if errScan := rowsSupps.Scan(&s.ID, &s.SupplementName, &s.Dosage, &s.Frequency, &s.Active); errScan == nil {
+				supplements = append(supplements, s)
+			}
+		}
+	} else {
+		slog.Error("failed to query supplements for coach panel", "error", errSupps)
+	}
+
+	// Query client's past chat history
+	type ChatMessage struct {
+		Sender      string `json:"sender"`
+		MessageText string `json:"message_text"`
+	}
+	rowsChat, errChat := db.Pool.Query(ctx, 
+		`SELECT sender, message_text 
+		 FROM phi_stub.chat_history 
+		 WHERE client_id = $1 
+		 ORDER BY created_at ASC LIMIT 50`, targetClientID)
+	var chatHistory []ChatMessage
+	if errChat == nil {
+		defer rowsChat.Close()
+		for rowsChat.Next() {
+			var m ChatMessage
+			if errScan := rowsChat.Scan(&m.Sender, &m.MessageText); errScan == nil {
+				chatHistory = append(chatHistory, m)
+			}
+		}
+	} else {
+		slog.Error("failed to query chat history for coach panel", "error", errChat)
+	}
+
 	// Render HTMX block update for #detail-pane (loads client detail layout)
 	data := map[string]interface{}{
-		"Client":     clientProfile,
-		"Notes":      notes,
-		"Biomarkers": biomarkers,
+		"Client":      clientProfile,
+		"Notes":       notes,
+		"Biomarkers":  biomarkers,
+		"Supplements": supplements,
+		"ChatHistory": chatHistory,
 	}
 
 	// Determine if this is an HTMX query requesting HTML swap or direct API client requesting JSON
@@ -781,4 +872,255 @@ func HandleCreateSupplementSchedule(w http.ResponseWriter, r *http.Request) {
 			<button class="hover:underline text-[10px]" onclick="this.parentElement.remove()">Dismiss</button>
 		</div>
 	`))
+}
+
+// HandleDeactivateSupplement deactivates a client's supplement schedule
+func HandleDeactivateSupplement(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	callerID, _ := ctx.Value(UserIDKey).(string)
+	callerRole, _ := ctx.Value(UserRoleKey).(string)
+
+	if callerRole != "admin" && callerRole != "coach" {
+		http.Error(w, "Forbidden: Only clinicians can deactivate supplement regimes", http.StatusForbidden)
+		return
+	}
+
+	scheduleID := r.FormValue("schedule_id")
+	if scheduleID == "" {
+		http.Error(w, "Missing schedule ID", http.StatusBadRequest)
+		return
+	}
+
+	_, err := db.Pool.Exec(ctx,
+		`UPDATE phi_stub.supplement_schedules
+		 SET active = false, updated_at = now()
+		 WHERE id = $1;`,
+		scheduleID,
+	)
+	if err != nil {
+		slog.Error("failed to deactivate supplement schedule", "error", err)
+		http.Error(w, "Internal database error", http.StatusInternalServerError)
+		return
+	}
+
+	// Compliance Audit log
+	action := "deactivated_supplement_schedule"
+	resType := "supplement_schedule"
+	ip := r.RemoteAddr
+	ua := r.UserAgent()
+
+	auditLog := repository.AuditLog{
+		ActorID:      callerID,
+		ActorRole:    callerRole,
+		Action:       action,
+		ResourceType: &resType,
+		ResourceID:   &scheduleID,
+		IPAddress:    &ip,
+		UserAgent:    &ua,
+	}
+	auditRepo := &repository.AuditLogRepo{}
+	_ = auditRepo.Create(ctx, auditLog)
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(`
+		<span class="text-xs text-red-400 font-medium">Deactivated</span>
+	`))
+}
+
+// HandleSetCustomBiomarkerRange configures clinical target boundaries for clients
+func HandleSetCustomBiomarkerRange(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	callerID, _ := ctx.Value(UserIDKey).(string)
+	callerRole, _ := ctx.Value(UserRoleKey).(string)
+
+	if callerRole != "admin" && callerRole != "coach" {
+		http.Error(w, "Forbidden: Only clinicians can customize client ranges", http.StatusForbidden)
+		return
+	}
+
+	clientID := r.FormValue("client_id")
+	biomarkerKey := r.FormValue("biomarker_key")
+	minValStr := r.FormValue("min_value")
+	maxValStr := r.FormValue("max_value")
+
+	if clientID == "" || biomarkerKey == "" {
+		http.Error(w, "Missing required parameters: client_id, biomarker_key", http.StatusBadRequest)
+		return
+	}
+
+	_, err := db.Pool.Exec(ctx,
+		`INSERT INTO phi_stub.custom_biomarker_ranges (client_id, biomarker_key, min_value, max_value)
+		 VALUES ($1, $2, NULLIF($3, '')::numeric, NULLIF($4, '')::numeric)
+		 ON CONFLICT (client_id, biomarker_key)
+		 DO UPDATE SET min_value = EXCLUDED.min_value, max_value = EXCLUDED.max_value;`,
+		clientID, biomarkerKey, minValStr, maxValStr,
+	)
+	if err != nil {
+		slog.Error("failed to upsert custom biomarker target range", "error", err)
+		http.Error(w, "Internal database error", http.StatusInternalServerError)
+		return
+	}
+
+	// Compliance Audit log
+	action := "updated_custom_biomarker_range"
+	resType := "custom_biomarker_range"
+	ip := r.RemoteAddr
+	ua := r.UserAgent()
+	meta := fmt.Sprintf(`{"biomarker": %q, "min": %q, "max": %q}`, biomarkerKey, minValStr, maxValStr)
+
+	auditLog := repository.AuditLog{
+		ActorID:        callerID,
+		ActorRole:      callerRole,
+		Action:         action,
+		ResourceType:   &resType,
+		TargetClientID: &clientID,
+		IPAddress:      &ip,
+		UserAgent:      &ua,
+		Metadata:       &meta,
+	}
+	auditRepo := &repository.AuditLogRepo{}
+	_ = auditRepo.Create(ctx, auditLog)
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(`
+		<span class="text-[10px] text-emerald-400 font-semibold">Custom Target Saved</span>
+	`))
+}
+
+// WebhookIngestPayload represents the JSON body sent from external document parser workflows
+type WebhookIngestPayload struct {
+	ClientID string                 `json:"client_id"`
+	Vendor   string                 `json:"vendor"`
+	Results  map[string]interface{} `json:"results"`
+}
+
+// HandleWebhookIngest handles asynchronous callbacks from cloud document parsers
+func HandleWebhookIngest(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var payload WebhookIngestPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "Invalid JSON structure", http.StatusBadRequest)
+		return
+	}
+
+	if payload.ClientID == "" || payload.Vendor == "" {
+		http.Error(w, "Missing client_id or vendor details", http.StatusBadRequest)
+		return
+	}
+
+	slog.Info("Webhook ingest triggered",
+		slog.String("client_id", payload.ClientID),
+		slog.String("vendor", payload.Vendor),
+		slog.Int("keys_count", len(payload.Results)),
+	)
+
+	// Persist mock results to DB
+	if payload.Vendor == "microbiomix" {
+		_, err := db.Pool.Exec(ctx,
+			`INSERT INTO phi_stub.microbiome_results (client_id, test_date, diversity_index, dysbiosis_index, detected_pathobionts)
+			 VALUES ($1, CURRENT_DATE, $2, $3, $4);`,
+			payload.ClientID, 7.8, 2.5, []string{"Enterococcus faecalis"},
+		)
+		if err != nil {
+			slog.Error("failed to write microbiome from webhook", "error", err)
+		}
+	} else if payload.Vendor == "pnoe" {
+		_, err := db.Pool.Exec(ctx,
+			`INSERT INTO phi_stub.metabolic_assessments (client_id, test_date, vo2_peak, rmr_kcal, rer_resting)
+			 VALUES ($1, CURRENT_DATE, $2, $3, $4);`,
+			payload.ClientID, 52.0, 1920, 0.74,
+		)
+		if err != nil {
+			slog.Error("failed to write metabolic from webhook", "error", err)
+		}
+	}
+
+	// Logging Compliance Audit log
+	action := "webhook_ingestion_success"
+	resType := "webhook_data"
+	ip := r.RemoteAddr
+	ua := r.UserAgent()
+	meta := fmt.Sprintf(`{"vendor": %q}`, payload.Vendor)
+
+	auditLog := repository.AuditLog{
+		ActorID:        "system-webhook",
+		ActorRole:      "system",
+		Action:         action,
+		ResourceType:   &resType,
+		TargetClientID: &payload.ClientID,
+		IPAddress:      &ip,
+		UserAgent:      &ua,
+		Metadata:       &meta,
+	}
+	auditRepo := &repository.AuditLogRepo{}
+	_ = auditRepo.Create(ctx, auditLog)
+
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok", "message": "Ingestion successful"})
+}
+
+// HandleExportAuditLogs exports target client audit trails as CSV attachments
+func HandleExportAuditLogs(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	callerID, _ := ctx.Value(UserIDKey).(string)
+	callerRole, _ := ctx.Value(UserRoleKey).(string)
+
+	if callerRole != "admin" && callerRole != "coach" {
+		http.Error(w, "Forbidden: Clinicians only", http.StatusForbidden)
+		return
+	}
+
+	targetClientID := chi.URLParam(r, "clientId")
+	if targetClientID == "" {
+		http.Error(w, "Missing client ID", http.StatusBadRequest)
+		return
+	}
+
+	auditRepo := &repository.AuditLogRepo{}
+	logs, err := auditRepo.ListForTarget(ctx, targetClientID)
+	if err != nil {
+		slog.Error("failed to query audit logs for CSV export", "client_id", targetClientID, "error", err)
+		http.Error(w, "Internal database error", http.StatusInternalServerError)
+		return
+	}
+
+	// Logging CSV export action
+	exportAudit := repository.AuditLog{
+		ActorID:        callerID,
+		ActorRole:      callerRole,
+		Action:         "exported_audit_trail_csv",
+		TargetClientID: &targetClientID,
+		IPAddress:      &r.RemoteAddr,
+		UserAgent:      &r.UserAgent(),
+	}
+	_ = auditRepo.Create(ctx, exportAudit)
+
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"audit_trail_%s.csv\"", targetClientID))
+
+	// Write CSV headers
+	w.Write([]byte("ID,ActorID,ActorRole,Action,ResourceType,ResourceID,CreatedAt,IPAddress,UserAgent\n"))
+	for _, l := range logs {
+		resType := ""
+		if l.ResourceType != nil {
+			resType = *l.ResourceType
+		}
+		resID := ""
+		if l.ResourceID != nil {
+			resID = *l.ResourceID
+		}
+		ip := ""
+		if l.IPAddress != nil {
+			ip = *l.IPAddress
+		}
+		ua := ""
+		if l.UserAgent != nil {
+			ua = *l.UserAgent
+		}
+		
+		row := fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
+			l.ID, l.ActorID, l.ActorRole, l.Action, resType, resID,
+			l.CreatedAt.Format(time.RFC3339), ip, strings.ReplaceAll(ua, ",", ";"))
+		w.Write([]byte(row))
+	}
 }
