@@ -1,6 +1,11 @@
 package api
 
 import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"strings"
 	"testing"
 )
 
@@ -48,5 +53,58 @@ func TestGenerateTailoredCognitivePlan(t *testing.T) {
 	expectedFocus := "Ultradian rhythm focus protocol: 90-minute deep work cycles + 40Hz gamma binaural beats."
 	if focusPlan != expectedFocus {
 		t.Errorf("expected ultradian beats, got %q", focusPlan)
+	}
+}
+
+func TestHandleBookConsultation(t *testing.T) {
+	form := url.Values{}
+	form.Set("booking_date", "July 20, 2026 at 10:00 AM")
+
+	req, err := http.NewRequest("POST", "/api/consultations/book", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleBookConsultation)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+
+	if !strings.Contains(rr.Body.String(), "Booking Confirmed!") {
+		t.Errorf("expected confirmation message, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleCreateBillingInvoiceForbidden(t *testing.T) {
+	form := url.Values{}
+	form.Set("client_id", "client-id-123")
+	form.Set("service", "Longevity Consultation")
+	form.Set("amount", "250")
+
+	req, err := http.NewRequest("POST", "/api/billing/invoice", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	// Clients cannot dispatch invoices
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleCreateBillingInvoice)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusForbidden {
+		t.Errorf("expected 403 Forbidden, got %v", rr.Code)
 	}
 }

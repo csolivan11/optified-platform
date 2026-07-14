@@ -874,7 +874,11 @@
                 <div class="flex" :class="msg.sender === 'user' ? 'justify-end' : 'justify-start'">
                     <div class="max-w-[80%] rounded-lg p-3 text-xs leading-relaxed"
                          :class="msg.sender === 'user' ? 'bg-cyan-600 text-white rounded-br-none' : 'bg-navy-900/60 text-slate-200 border border-navy-850 rounded-bl-none'">
-                        <span x-html="msg.text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')"></span>
+                        <span x-html="(() => {
+                            let d = document.createElement('div');
+                            d.textContent = msg.text;
+                            return d.innerHTML.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+                        })()"></span>
                     </div>
                 </div>
             </template>
@@ -900,7 +904,7 @@
     </div>
 
     <!-- Consultation Scheduler Section -->
-    <div class="rounded-xl border border-navy-850 bg-navy-950 p-6 shadow-md" x-data="{ booked: false, date: '' }">
+    <div class="rounded-xl border border-navy-850 bg-navy-950 p-6 shadow-md" id="consultation-booking-container">
         <div class="flex items-center justify-between mb-4 border-b border-navy-900 pb-3">
             <div>
                 <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
@@ -912,8 +916,13 @@
             <span class="text-[10px] px-2 py-0.5 rounded border border-emerald-800 bg-emerald-950/40 text-emerald-400 uppercase tracking-wider font-semibold">Telehealth Review</span>
         </div>
 
-        <div x-show="!booked" class="space-y-4">
+        <form hx-post="/api/consultations/book"
+              hx-target="#consultation-booking-container"
+              hx-swap="outerHTML"
+              class="space-y-4"
+              x-data="{ date: '' }">
             <p class="text-xs text-slate-350">Select a convenient date and time to review your parsed biomarker anomalies and personalized protocols:</p>
+            <input type="hidden" name="booking_date" :value="date">
             <div class="flex flex-wrap gap-2">
                 <button type="button" @click="date = 'July 20, 2026 at 10:00 AM'" :class="date === 'July 20, 2026 at 10:00 AM' ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-navy-900 text-slate-300 border-navy-800'" class="px-3 py-1.5 border rounded text-xs transition">
                     July 20 - 10:00 AM
@@ -925,15 +934,10 @@
                     July 23 - 11:30 AM
                 </button>
             </div>
-            <button type="button" @click="if(date) booked = true;" :disabled="!date" class="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-semibold transition">
+            <button type="submit" :disabled="!date" class="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-semibold transition">
                 Confirm Booking
             </button>
-        </div>
-
-        <div x-show="booked" class="p-4 rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs space-y-2">
-            <span>Consultation confirmed for <b x-text="date"></b>.</span>
-            <a href="https://meet.daily.co/optified-stub-room-yerkes" target="_blank" class="block font-bold text-cyan-400 underline">Join Secure Video Call (Daily.co)</a>
-        </div>
+        </form>
     </div>
 
     <!-- KnowsItAll Research Hub & Interactive Knowledge Graph -->
@@ -1051,7 +1055,11 @@
                     <div class="flex" :class="msg.sender === 'user' ? 'justify-end' : 'justify-start'">
                         <div class="max-w-[85%] rounded p-2.5 text-[10px] leading-relaxed"
                              :class="msg.sender === 'user' ? 'bg-cyan-600 text-white rounded-br-none' : 'bg-navy-900/60 text-slate-200 border border-navy-850 rounded-bl-none'">
-                            <span x-html="msg.text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')"></span>
+                           <span x-html="(() => {
+                            let d = document.createElement('div');
+                            d.textContent = msg.text;
+                            return d.innerHTML.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+                        })()"></span>
                         </div>
                     </div>
                 </template>

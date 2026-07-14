@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -54,4 +55,10 @@ func TestMFAExportAuditLogGateWithRoleFail(t *testing.T) {
 	if rr.Code != http.StatusForbidden {
 		t.Errorf("expected 403 due to missing mfa_token, got %v", rr.Code)
 	}
+}
+
+func withUserSession(ctx context.Context, id, role string) context.Context {
+	ctx = context.WithValue(ctx, UserIDKey, id)
+	ctx = context.WithValue(ctx, UserRoleKey, role)
+	return ctx
 }

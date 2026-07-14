@@ -150,7 +150,11 @@
                     <div class="flex" :class="msg.sender === 'user' ? 'justify-end' : 'justify-start'">
                         <div class="max-w-[85%] rounded p-2.5 text-[11px] leading-relaxed"
                              :class="msg.sender === 'user' ? 'bg-cyan-600 text-white rounded-br-none' : 'bg-navy-900/60 text-slate-300 border border-navy-850 rounded-bl-none'">
-                            <span x-html="msg.text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')"></span>
+                            <span x-html="(() => {
+                                let d = document.createElement('div');
+                                d.textContent = msg.text;
+                                return d.innerHTML.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+                            })()"></span>
                         </div>
                     </div>
                 </template>
@@ -238,12 +242,16 @@
     </div>
 
     <!-- Private Cash-Paying Client Invoicing Panel -->
-    <div class="border-t border-navy-900 pt-4 bg-navy-950 pb-2">
+    <div class="border-t border-navy-900 pt-4 bg-navy-950 pb-2" id="billing-invoice-container">
         <h4 class="text-xs font-semibold text-slate-450 uppercase mb-2">Private Client Billing & Invoicing (Stripe Integration)</h4>
-        <form class="grid grid-cols-1 md:grid-cols-3 gap-2" hx-on::submit="alert('Invoice successfully dispatched to Stripe. Status: Sent.'); this.reset();">
-            <input type="text" placeholder="Service (e.g. Longevity Consultation)" required
-                   class="px-2 py-1.5 border border-navy-800 rounded bg-navy-900 text-slate-200 text-xs focus:outline-none">
-            <input type="number" placeholder="Amount ($)" required
+        <form class="grid grid-cols-1 md:grid-cols-4 gap-2" 
+              hx-post="/api/billing/invoice"
+              hx-target="#billing-invoice-container"
+              hx-swap="outerHTML">
+            <input type="hidden" name="client_id" value="{{.Client.ID}}">
+            <input type="text" name="service" placeholder="Service (e.g. Longevity Consultation)" required
+                   class="px-2 py-1.5 border border-navy-800 rounded bg-navy-900 text-slate-200 text-xs focus:outline-none col-span-2">
+            <input type="number" name="amount" placeholder="Amount ($)" required
                    class="px-2 py-1.5 border border-navy-800 rounded bg-navy-900 text-slate-200 text-xs focus:outline-none">
             <button type="submit" class="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition">
                 Dispatch Invoice
@@ -363,14 +371,17 @@
             <div class="p-3 rounded border border-navy-900 bg-navy-900/20 text-xs">
                 <span class="font-bold text-slate-350 block mb-2">Establish Knowledge Graph Connection</span>
                 <div id="edge-creator-feedback"></div>
-                <form class="space-y-2" hx-on::submit="alert('Connection pending approval from clinic review board.'); this.reset();">
+                <form class="space-y-2" 
+                      hx-post="/api/knowsitall/graph/edge"
+                      hx-target="#edge-creator-feedback"
+                      hx-on::after-request="if(event.detail.successful) { this.reset(); }">
                     <div class="flex gap-2">
-                        <input type="text" placeholder="Source (e.g. MTHFR)" required
+                        <input type="text" name="source" placeholder="Source (e.g. MTHFR)" required
                                class="w-full px-2 py-1 border border-navy-800 rounded bg-navy-900 text-slate-200 text-[10px] focus:outline-none">
-                        <input type="text" placeholder="Target (e.g. Active Folate)" required
+                        <input type="text" name="target" placeholder="Target (e.g. Active Folate)" required
                                class="w-full px-2 py-1 border border-navy-800 rounded bg-navy-900 text-slate-200 text-[10px] focus:outline-none">
                     </div>
-                    <input type="text" placeholder="Relation (e.g. upregulates)" required
+                    <input type="text" name="edge_type" placeholder="Relation (e.g. upregulates)" required
                            class="w-full px-2 py-1 border border-navy-800 rounded bg-navy-900 text-slate-200 text-[10px] focus:outline-none">
                     <button type="submit" class="w-full py-1 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-[10px] font-semibold transition">
                         Add Edge

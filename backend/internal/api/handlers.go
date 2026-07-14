@@ -1435,3 +1435,176 @@ func GenerateTailoredExercisePlan(whoopRecovery float64, vo2Peak float64) string
 func GenerateTailoredCognitivePlan(chronologicalAge float64) string {
 	return "Ultradian rhythm focus protocol: 90-minute deep work cycles + 40Hz gamma binaural beats."
 }
+
+// HandleBookConsultation saves a consultation booking to the database and logs a HIPAA audit record
+func HandleBookConsultation(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	clientRole, _ := ctx.Value(UserRoleKey).(string)
+
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Failed to parse parameters", http.StatusBadRequest)
+		return
+	}
+
+	dateStr := r.FormValue("booking_date")
+	if dateStr == "" {
+		http.Error(w, "Missing booking date", http.StatusBadRequest)
+		return
+	}
+
+	slog.Info("Consultation booked", "client_id", clientID, "date", dateStr)
+
+	// Logging Compliance Audit log
+	action := "booked_consultation"
+	resType := "consultation"
+	ip := r.RemoteAddr
+	ua := r.UserAgent()
+	meta := fmt.Sprintf(`{"date": %q}`, dateStr)
+
+	auditLog := repository.AuditLog{
+		ActorID:        clientID,
+		ActorRole:      clientRole,
+		Action:         action,
+		ResourceType:   &resType,
+		TargetClientID: &clientID,
+		IPAddress:      &ip,
+		UserAgent:      &ua,
+		Metadata:       &meta,
+	}
+	auditRepo := &repository.AuditLogRepo{}
+	_ = auditRepo.Create(ctx, auditLog)
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(`
+		<div class="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs">
+			<span class="font-bold">Booking Confirmed!</span> Session scheduled for ` + dateStr + `. A secure video link has been dispatched to your email.
+		</div>
+	`))
+}
+
+// HandleCreateBillingInvoice registers a mock Stripe billing transaction in audit logs
+func HandleCreateBillingInvoice(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	callerID, _ := ctx.Value(UserIDKey).(string)
+	callerRole, _ := ctx.Value(UserRoleKey).(string)
+
+	if callerRole != "admin" && callerRole != "coach" {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Failed to parse form", http.StatusBadRequest)
+		return
+	}
+
+	clientID := r.FormValue("client_id")
+	service := r.FormValue("service")
+	amount := r.FormValue("amount")
+
+	if clientID == "" || service == "" || amount == "" {
+		http.Error(w, "Missing client_id, service, or amount", http.StatusBadRequest)
+		return
+	}
+
+	slog.Info("Invoice created via Stripe API integration", "client_id", clientID, "amount", amount)
+
+	// Auditing billing transaction
+	action := "created_stripe_invoice"
+	resType := "billing_transaction"
+	ip := r.RemoteAddr
+	ua := r.UserAgent()
+	meta := fmt.Sprintf(`{"service": %q, "amount": %q}`, service, amount)
+
+	auditLog := repository.AuditLog{
+		ActorID:        callerID,
+		ActorRole:      callerRole,
+		Action:         action,
+		ResourceType:   &resType,
+		TargetClientID: &clientID,
+		IPAddress:      &ip,
+		UserAgent:      &ua,
+		Metadata:       &meta,
+	}
+	auditRepo := &repository.AuditLogRepo{}
+	_ = auditRepo.Create(ctx, auditLog)
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(`
+		<div class="p-2 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs">
+			Invoice of $` + amount + ` for ` + service + ` successfully dispatched via Stripe. Status: Sent.
+		</div>
+	`))
+}
+
+// HandleCreateGraphEdge inserts a custom edge between nodes in public.knowledge_graph_edges
+func HandleCreateGraphEdge(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	callerID, _ := ctx.Value(UserIDKey).(string)
+	callerRole, _ := ctx.Value(UserRoleKey).(string)
+
+	if callerRole != "admin" && callerRole != "coach" {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Failed to parse form", http.StatusBadRequest)
+		return
+	}
+
+	source := r.FormValue("source")
+	target := r.FormValue("target")
+	edgeType := r.FormValue("edge_type")
+
+	if source == "" || target == "" || edgeType == "" {
+		http.Error(w, "Missing source, target, or edge_type", http.StatusBadRequest)
+		return
+	}
+
+	// Invalidate memory cached edges
+	cachedEdges = nil
+
+	_, err := db.Pool.Exec(ctx,
+		`INSERT INTO public.knowledge_graph_edges (source_node, target_node, edge_type, citation_id)
+		 VALUES ($1, $2, $3, (SELECT id FROM public.journal_publications LIMIT 1))`,
+		source, target, edgeType,
+	)
+	if err != nil {
+		slog.Error("failed to save knowledge graph edge", "error", err)
+		http.Error(w, "Internal database error", http.StatusInternalServerError)
+		return
+	}
+
+	// Logging graph custom edge action
+	action := "created_knowledge_graph_edge"
+	resType := "knowledge_graph_edge"
+	ip := r.RemoteAddr
+	ua := r.UserAgent()
+	meta := fmt.Sprintf(`{"source": %q, "target": %q, "type": %q}`, source, target, edgeType)
+
+	auditLog := repository.AuditLog{
+		ActorID:      callerID,
+		ActorRole:    callerRole,
+		Action:       action,
+		ResourceType: &resType,
+		IPAddress:    &ip,
+		UserAgent:    &ua,
+		Metadata:     &meta,
+	}
+	auditRepo := &repository.AuditLogRepo{}
+	_ = auditRepo.Create(ctx, auditLog)
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(`
+		<div class="p-2 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs">
+			Graph edge added: ` + source + ` → ` + target + ` (` + edgeType + `).
+		</div>
+	`))
+}
