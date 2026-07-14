@@ -83,6 +83,12 @@ func ConfigureRouter() *chi.Mux {
 
 			// Clinician Assignment
 			r.Post("/clients/assign", HandleAssignClinician)
+
+			// KnowsItAll AI & Knowledge Graph Routing
+			r.Post("/chat/knowsitall", HandleKnowsItAllChat)
+			r.Get("/knowsitall/graph", HandleGetKnowledgeGraph)
+			r.Get("/knowsitall/export-citations", HandleExportCitations)
+			r.Post("/knowsitall/upload-paper", HandleUploadPaperPDF)
 		})
 	})
 

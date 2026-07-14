@@ -708,5 +708,143 @@
             <span>Consultation confirmed for <b x-text="date"></b>. Check your secure inbox for links.</span>
         </div>
     </div>
+
+    <!-- KnowsItAll Research Hub & Interactive Knowledge Graph -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6" x-data="{
+        message: '',
+        loading: false,
+        minIF: '0.0',
+        messages: [
+            { sender: 'ai', text: 'Hello, I am **KnowsItAll**. I am trained on top medical journal publications from USA, UK, Germany, Japan, and Switzerland. Ask me about supplement synergies or sports nutrition.' }
+        ],
+        async sendQuery() {
+            if (!this.message.trim()) return;
+            const queryText = this.message;
+            this.messages.push({ sender: 'user', text: queryText });
+            this.message = '';
+            this.loading = true;
+
+            try {
+                const response = await fetch('/api/chat/knowsitall', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: queryText, min_impact_factor: this.minIF })
+                });
+                const data = await response.json();
+                this.messages.push({ sender: 'ai', text: data.reply });
+            } catch(e) {
+                this.messages.push({ sender: 'ai', text: 'Connection timeout. Check local service status.' });
+            } finally {
+                this.loading = false;
+                this.$nextTick(() => {
+                    const el = document.getElementById('knowsitall-chat-window');
+                    el.scrollTop = el.scrollHeight;
+                });
+            }
+        }
+    }">
+        <!-- Interactive Knowledge Graph Explorer -->
+        <div class="lg:col-span-2 rounded-xl border border-navy-850 bg-navy-950 p-6 shadow-md">
+            <div class="flex items-center justify-between mb-4 border-b border-navy-900 pb-3">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+                        <span class="h-2 w-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                        Interactive Medical Knowledge Graph
+                    </h2>
+                    <p class="text-xs text-slate-450 mt-0.5">Explore peer-reviewed nodes mapping biomarker anomalies to longevity interventions.</p>
+                </div>
+                <a href="/api/knowsitall/export-citations" class="text-[10px] px-2.5 py-1 rounded border border-cyan-850 hover:bg-cyan-900/10 text-cyan-400 font-semibold transition uppercase tracking-wider">
+                    Export AMA Bibliography
+                </a>
+            </div>
+
+            <!-- SVG Knowledge Graph -->
+            <div class="w-full h-80 rounded-lg border border-navy-900 bg-slate-950 flex items-center justify-center relative overflow-hidden">
+                <svg viewBox="0 0 500 300" class="w-full h-full text-slate-400 select-none">
+                    <!-- Nodes links -->
+                    <line x1="100" y1="150" x2="250" y2="100" stroke="#0891b2" stroke-width="1.5" stroke-dasharray="3"/>
+                    <line x1="100" y1="150" x2="250" y2="200" stroke="#0891b2" stroke-width="1.5" stroke-dasharray="3"/>
+                    <line x1="400" y1="150" x2="250" y2="100" stroke="#0891b2" stroke-width="1.5"/>
+                    <line x1="400" y1="150" x2="250" y2="200" stroke="#0891b2" stroke-width="1.5"/>
+
+                    <!-- MTHFR Node -->
+                    <g class="cursor-pointer group">
+                        <circle cx="100" cy="150" r="18" fill="#1e1b4b" stroke="#4338ca" stroke-width="2" class="hover:stroke-indigo-400 transition"/>
+                        <text x="100" y="154" text-anchor="middle" font-size="8" fill="#e2e8f0" font-weight="bold">MTHFR</text>
+                    </g>
+
+                    <!-- Homocysteine Node -->
+                    <g class="cursor-pointer group">
+                        <circle cx="250" cy="100" r="18" fill="#450a0a" stroke="#b91c1c" stroke-width="2"/>
+                        <text x="250" y="104" text-anchor="middle" font-size="7" fill="#fecaca" font-weight="bold">Homocysteine</text>
+                    </g>
+
+                    <!-- L-5-MTHF Node -->
+                    <g class="cursor-pointer group">
+                        <circle cx="250" cy="200" r="18" fill="#064e3b" stroke="#047857" stroke-width="2"/>
+                        <text x="250" y="204" text-anchor="middle" font-size="7" fill="#a7f3d0" font-weight="bold">L-5-MTHF</text>
+                    </g>
+
+                    <!-- Autophagy Node -->
+                    <g class="cursor-pointer group">
+                        <circle cx="400" cy="150" r="18" fill="#14532d" stroke="#15803d" stroke-width="2"/>
+                        <text x="400" y="154" text-anchor="middle" font-size="7" fill="#bbf7d0" font-weight="bold">Autophagy</text>
+                    </g>
+                </svg>
+                <div class="absolute bottom-2 left-2 text-[9px] text-slate-500 bg-navy-950/80 px-2 py-1 rounded border border-navy-900">
+                    Hover nodes to trace study citations. Link data: supra-physiological pathways mapped.
+                </div>
+            </div>
+        </div>
+
+        <!-- KnowsItAll Research AI Chat -->
+        <div class="rounded-xl border border-navy-850 bg-navy-950 p-6 shadow-md flex flex-col justify-between">
+            <div class="border-b border-navy-900 pb-3 mb-4 flex justify-between items-center">
+                <div>
+                    <h2 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+                        <span class="h-2 w-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                        "KnowsItAll" Literature Assistant
+                    </h2>
+                    <p class="text-[10px] text-slate-500 mt-0.5">Explore peer-reviewed study conclusions.</p>
+                </div>
+                <div class="flex items-center gap-1">
+                    <label class="text-[9px] text-slate-500">Min IF:</label>
+                    <select x-model="minIF" class="bg-navy-900 border border-navy-800 rounded text-[9px] px-1 py-0.5 text-slate-350 focus:outline-none">
+                        <option value="0.0">All</option>
+                        <option value="10.0">&gt; 10</option>
+                        <option value="30.0">&gt; 30</option>
+                        <option value="80.0">&gt; 80</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Chat screen -->
+            <div id="knowsitall-chat-window" class="h-56 overflow-y-auto mb-4 p-3 rounded bg-slate-950 border border-navy-900 space-y-3">
+                <template x-for="msg in messages">
+                    <div class="flex" :class="msg.sender === 'user' ? 'justify-end' : 'justify-start'">
+                        <div class="max-w-[85%] rounded p-2.5 text-[10px] leading-relaxed"
+                             :class="msg.sender === 'user' ? 'bg-cyan-600 text-white rounded-br-none' : 'bg-navy-900/60 text-slate-200 border border-navy-850 rounded-bl-none'">
+                            <span x-html="msg.text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')"></span>
+                        </div>
+                    </div>
+                </template>
+                <div x-show="loading" class="flex justify-start">
+                    <div class="bg-navy-900/60 text-slate-500 border border-navy-850 rounded p-2 text-[10px] flex items-center gap-1">
+                        <span class="animate-pulse">●</span> Searching literature database...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Box -->
+            <form @submit.prevent="sendQuery()" class="flex gap-2">
+                <input type="text" x-model="message" placeholder="Ask about L-Theanine + Caffeine synergy or Autophagy..."
+                       class="flex-1 rounded border border-navy-800 bg-navy-900 px-3 py-1.5 text-[10px] text-slate-100 placeholder-slate-500 focus:border-cyan-500 focus:outline-none transition">
+                <button type="submit" :disabled="loading"
+                        class="px-3 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-[10px] font-semibold disabled:opacity-50 transition">
+                    Ask
+                </button>
+            </form>
+        </div>
+    </div>
 </div>
 {{end}}
