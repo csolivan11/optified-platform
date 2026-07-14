@@ -1,0 +1,52 @@
+package api
+
+import (
+	"testing"
+)
+
+func TestGenerateTailoredNutritionPlan(t *testing.T) {
+	// Diversity score < 6.0 should trigger high-fiber prebiotic protocols
+	lowDivPlan := GenerateTailoredNutritionPlan(5.2)
+	expectedLow := "High-diversity plant fiber protocol: 35g daily prebiotics + Konjac root extract to clear beta-glucuronidase."
+	if lowDivPlan != expectedLow {
+		t.Errorf("expected prebiotic protocol, got %q", lowDivPlan)
+	}
+
+	// Diversity score >= 6.0 should trigger standard protocol
+	stdPlan := GenerateTailoredNutritionPlan(7.8)
+	expectedStd := "Standard longevity protocol: Mediterranean diet with high polyphenol olive oil & fermented foods."
+	if stdPlan != expectedStd {
+		t.Errorf("expected standard protocol, got %q", stdPlan)
+	}
+}
+
+func TestGenerateTailoredExercisePlan(t *testing.T) {
+	// Whoop recovery < 40.0 should trigger Zone 1 active recovery
+	recoveryPlan := GenerateTailoredExercisePlan(35.0, 52.0)
+	expectedRec := "Recovery Protocol: 45 minutes Zone 1 active recovery (recovery day triggered)."
+	if recoveryPlan != expectedRec {
+		t.Errorf("expected active recovery, got %q", recoveryPlan)
+	}
+
+	// VO2 Peak < 45.0 should trigger Norwegian 4x4 intervals
+	hiitPlan := GenerateTailoredExercisePlan(75.0, 42.0)
+	expectedHiit := "VO2 Max Build Protocol: Norwegian 4x4 intervals at 90% HRmax twice weekly."
+	if hiitPlan != expectedHiit {
+		t.Errorf("expected Norwegian 4x4 HIIT, got %q", hiitPlan)
+	}
+
+	// Normal inputs should trigger Zone 2 endurance base protocol
+	normalPlan := GenerateTailoredExercisePlan(80.0, 52.0)
+	expectedNormal := "Endurance Build Protocol: 3x90 mins Zone 2 training + 1x Peak output session."
+	if normalPlan != expectedNormal {
+		t.Errorf("expected endurance build, got %q", normalPlan)
+	}
+}
+
+func TestGenerateTailoredCognitivePlan(t *testing.T) {
+	focusPlan := GenerateTailoredCognitivePlan(45.0)
+	expectedFocus := "Ultradian rhythm focus protocol: 90-minute deep work cycles + 40Hz gamma binaural beats."
+	if focusPlan != expectedFocus {
+		t.Errorf("expected ultradian beats, got %q", focusPlan)
+	}
+}

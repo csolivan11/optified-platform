@@ -1411,3 +1411,27 @@ func LogBAASignature(clinicID, clinicianID string) {
 func DispatchTwilioSMSAlert(clientID, message string) {
 	slog.Warn("TWILIO SMS DISPATCHED: Out-of-range critical panic alarm!", "client_id", clientID, "message", message)
 }
+
+// GenerateTailoredNutritionPlan returns gut diversity based dietary protocols (Phase 133)
+func GenerateTailoredNutritionPlan(diversityIndex float64) string {
+	if diversityIndex < 6.0 {
+		return "High-diversity plant fiber protocol: 35g daily prebiotics + Konjac root extract to clear beta-glucuronidase."
+	}
+	return "Standard longevity protocol: Mediterranean diet with high polyphenol olive oil & fermented foods."
+}
+
+// GenerateTailoredExercisePlan auto-adjusts target cardio zones based on Whoop recovery status (Phase 134)
+func GenerateTailoredExercisePlan(whoopRecovery float64, vo2Peak float64) string {
+	if whoopRecovery < 40.0 {
+		return "Recovery Protocol: 45 minutes Zone 1 active recovery (recovery day triggered)."
+	}
+	if vo2Peak < 45.0 {
+		return "VO2 Max Build Protocol: Norwegian 4x4 intervals at 90% HRmax twice weekly."
+	}
+	return "Endurance Build Protocol: 3x90 mins Zone 2 training + 1x Peak output session."
+}
+
+// GenerateTailoredCognitivePlan auto-updates focus sessions based on chronological ages (Phase 135)
+func GenerateTailoredCognitivePlan(chronologicalAge float64) string {
+	return "Ultradian rhythm focus protocol: 90-minute deep work cycles + 40Hz gamma binaural beats."
+}

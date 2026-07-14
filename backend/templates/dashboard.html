@@ -452,6 +452,96 @@
         </div>
     </div>
 
+    </div>
+
+    <!-- Interactive Human Body Map & Vital Organ Diagnostics (Phase 132, 137) -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6" x-data="{
+        activeOrgan: 'Hover an organ dot on the body map to view diagnostics.',
+        organs: {
+            brain: 'Brain: Homocysteine 8.2 umol/L (Target < 9.0). Cognitive performance optimized.',
+            heart: 'Heart: ApoB 62 mg/dL (Target < 65). Cardiovascular risk score: Optimal.',
+            liver: 'Liver: ALT 24 U/L, AST 22 U/L (Healthy baseline organ function).',
+            gut: 'Gut: Microbiome diversity score 7.8/10. Dysbiosis index 2.5.'
+        }
+    }">
+        <!-- SVG Human Body Map Canvas -->
+        <div class="lg:col-span-2 rounded-xl border border-navy-850 bg-navy-950 p-6 shadow-md">
+            <div class="flex items-center justify-between mb-4 border-b border-navy-900 pb-3">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+                        <span class="h-2 w-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                        Anatomical Biomarker Body Map
+                    </h2>
+                    <p class="text-xs text-slate-455 mt-0.5">Interactive visual mapping anomalies directly onto physical organ coordinates.</p>
+                </div>
+            </div>
+
+            <div class="w-full h-80 rounded-lg border border-navy-900 bg-slate-950 flex items-center justify-center relative overflow-hidden">
+                <svg viewBox="0 0 200 300" class="w-full h-full text-slate-600 select-none">
+                    <path d="M 100 20 C 110 20 115 30 115 40 C 115 50 110 55 100 55 C 90 55 85 50 85 40 C 85 30 90 20 100 20 Z 
+                             M 100 55 C 95 60 90 70 85 80 C 80 90 75 100 70 120 C 65 140 60 160 55 180 
+                             M 100 55 C 105 60 110 70 115 80 C 120 90 125 100 130 120 C 135 140 140 160 145 180
+                             M 85 80 L 115 80 L 110 200 L 90 200 Z
+                             M 90 200 L 85 280 M 110 200 L 115 280" 
+                          fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <circle cx="100" cy="38" r="6" fill="#6366f1" class="cursor-pointer hover:scale-125 transition" @mouseover="activeOrgan = organs.brain"/>
+                    <circle cx="100" cy="95" r="6" fill="#ef4444" class="cursor-pointer hover:scale-125 transition animate-pulse" @mouseover="activeOrgan = organs.heart"/>
+                    <circle cx="95" cy="125" r="6" fill="#f59e0b" class="cursor-pointer hover:scale-125 transition" @mouseover="activeOrgan = organs.liver"/>
+                    <circle cx="100" cy="155" r="6" fill="#10b981" class="cursor-pointer hover:scale-125 transition" @mouseover="activeOrgan = organs.gut"/>
+                </svg>
+                <div class="absolute bottom-2 left-2 text-[10px] text-slate-350 bg-navy-950/80 px-2 py-1.5 rounded border border-navy-900 w-11/12" x-text="activeOrgan"></div>
+            </div>
+        </div>
+
+        <!-- Vital Organ Health Panel -->
+        <div class="rounded-xl border border-navy-850 bg-navy-950 p-6 shadow-md flex flex-col justify-between">
+            <div>
+                <div class="border-b border-navy-900 pb-3 mb-4">
+                    <h2 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+                        <span class="h-2 w-2 rounded-full bg-cyan-400"></span>
+                        Vital Organ Diagnostics
+                    </h2>
+                    <p class="text-[10px] text-slate-500 mt-0.5">Biomarkers mapping metabolic and structural organ wellness.</p>
+                </div>
+                
+                <div class="space-y-3 text-xs text-slate-350">
+                    <div class="p-2.5 rounded bg-navy-900/40 border border-navy-900">
+                        <div class="flex justify-between font-semibold mb-1">
+                            <span class="text-[10px] uppercase text-slate-400">Liver Enzymes (ALT/AST)</span>
+                            <span class="text-emerald-400">24 / 22 U/L</span>
+                        </div>
+                        <div class="w-full bg-navy-950 h-1 rounded-full overflow-hidden">
+                            <div class="bg-emerald-500 h-full" style="width: 45%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-2.5 rounded bg-navy-900/40 border border-navy-900">
+                        <div class="flex justify-between font-semibold mb-1">
+                            <span class="text-[10px] uppercase text-slate-400">Kidney Filtration (Creatinine)</span>
+                            <span class="text-emerald-400">0.9 mg/dL</span>
+                        </div>
+                        <div class="w-full bg-navy-950 h-1 rounded-full overflow-hidden">
+                            <div class="bg-emerald-500 h-full" style="width: 60%"></div>
+                        </div>
+                    </div>
+
+                    <div class="p-2.5 rounded bg-navy-900/40 border border-navy-900">
+                        <div class="flex justify-between font-semibold mb-1">
+                            <span class="text-[10px] uppercase text-slate-400">Thyroid Axis (TSH)</span>
+                            <span class="text-emerald-400">1.8 uIU/mL</span>
+                        </div>
+                        <div class="w-full bg-navy-950 h-1 rounded-full overflow-hidden">
+                            <div class="bg-emerald-500 h-full" style="width: 50%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4 p-2 rounded bg-navy-900 text-[10px] text-slate-500">
+                All values resolve within optimal reference ranges. Checked 1 hour ago.
+            </div>
+        </div>
+    </div>
+
     <!-- Wearables Sync & HRV Trends Section -->
     <div class="rounded-xl border border-navy-850 bg-navy-950 p-6 shadow-md" x-data="{
         syncing: false,
