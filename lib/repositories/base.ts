@@ -1,32 +1,53 @@
-import "server-only";
-import { createClient } from "@/lib/supabase/server";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/client";
 
 /**
- * Base class for repositories.
+ * Base class for repositories in the client-side Static SPA architecture.
  *
- * Repositories are the single place application code talks to the database.
- * Every database query in the app goes through a repository method — no
- * direct Supabase calls in components, pages, or route handlers.
- *
- * Why:
- *   1. PHI migration boundary. When PHI tables move to AWS RDS, only the
- *      PHI-specific repository files change. Everything else stays identical.
- *   2. Centralized input validation (Zod schemas wrap method arguments).
- *   3. Centralized audit logging (high-sensitivity methods log automatically).
- *   4. Easier testing — repositories can be mocked cleanly.
- *   5. Type safety — method signatures are the contract, not raw query shapes.
- *
- * Subclasses declare their default client (user-scoped, RLS-enforced) and
- * methods call `.client` for reads/writes that should respect RLS. If a
- * specific method needs service-role (e.g. writing an audit log entry), it
- * imports that client separately — it's never available by default.
+ * All data access is routed through client-side API requests to the Go backend
+ * instead of direct Supabase queries. This decouples the UI from the database
+ * schema and ensures all PHI constraints are enforced inside the Go binary.
  */
 export abstract class Repository {
-  protected get client(): SupabaseClient {
-    // Each property access returns a fresh server client bound to the
-    // current request's cookies. This is correct — we don't want to cache
-    // a client across requests.
-    return createClient();
+  /**
+   * Helper to execute authenticated HTTP fetch requests to the Go API backend.
+   * Automatically extracts the active user session JWT token from Supabase Auth
+   * and attaches it as a Bearer Authorization header.
+   */
+  protected async apiFetch<T = any>(path: string, options: RequestInit = {}): Promise<T> {
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    const headers = new Headers(options.headers);
+    headers.set("Content-Type", "application/json");
+    
+    if (session?.access_token) {
+      headers.set("Authorization", `Bearer ${session.access_token}`);
+    }
+
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+    const response = await fetch(`${apiUrl}${path}`, {
+      ...options,
+      headers,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorJSON;
+      try {
+        errorJSON = JSON.parse(errorText);
+      } catch {
+        // Not JSON
+      }
+      
+      const errorMessage = errorJSON?.error || `API Request failed with status ${response.status}`;
+      throw new Error(errorMessage);
+    }
+
+    // Handle 204 No Content safely
+    if (response.status === 204) {
+      return {} as T;
+    }
+
+    return response.json() as Promise<T>;
   }
 }

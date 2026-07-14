@@ -1,0 +1,197 @@
+{{define "content"}}
+<div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+    <!-- Client Pipeline Panel -->
+    <div class="lg:col-span-1 rounded-xl border border-navy-850 bg-navy-950 p-6 flex flex-col h-[75vh]">
+        <h2 class="text-lg font-bold text-slate-100 mb-4">Assigned Client Pipeline</h2>
+        <div class="flex-1 overflow-y-auto space-y-3 pr-2">
+            <!-- Client Cards -->
+            {{range .Clients}}
+            <div hx-get="/api/clinical-notes/{{.ID}}" hx-target="#detail-pane" hx-swap="innerHTML"
+                 class="p-4 rounded-lg border border-navy-900 bg-navy-900/50 hover:bg-navy-900 hover:border-navy-750 transition cursor-pointer flex items-center justify-between group">
+                <div>
+                    <h3 class="text-sm font-semibold text-slate-200 group-hover:text-white">{{.DisplayName}}</h3>
+                    <p class="text-xs text-slate-500 mt-1">Client ID: {{.ID}}</p>
+                </div>
+                <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+            </div>
+            {{else}}
+            <p class="text-xs text-slate-500 text-center py-8">No clients assigned to your pipeline.</p>
+            {{end}}
+        </div>
+    </div>
+
+    <!-- Client Clinical Notes & Auditing Detail Pane -->
+    <div class="lg:col-span-2 rounded-xl border border-navy-850 bg-navy-950 p-6 flex flex-col h-[75vh]">
+        <div id="detail-pane" class="h-full flex flex-col items-center justify-center text-slate-500 text-sm">
+            <svg class="mx-auto h-12 w-12 text-slate-650" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+            </svg>
+            <p class="mt-4">Select a client from the pipeline to open secure medical records and clinical logs.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Define a partial template block that Go can serve dynamically for #detail-pane updates -->
+{{block "client-detail" .}}
+<div class="h-full flex flex-col justify-between">
+    <!-- Header -->
+    <div class="border-b border-navy-900 pb-4 flex justify-between items-center">
+        <div>
+            <h2 class="text-xl font-bold text-slate-100">{{.Client.DisplayName}}</h2>
+            <p class="text-xs text-slate-450 mt-1">Authorized access under HIPAA / FedRAMP safeguards</p>
+        </div>
+        <button hx-get="/api/audit-logs/{{.Client.ID}}" hx-target="#notes-list" hx-swap="innerHTML"
+                class="inline-flex items-center px-3 py-1.5 border border-navy-850 rounded bg-navy-900 text-xs font-semibold text-slate-400 hover:text-white transition">
+            View Access Logs
+        </button>
+    </div>
+
+    <!-- Scrollable Notes List & Diagnostics Panel -->
+    <div class="flex-1 overflow-y-auto my-6 pr-2 space-y-6">
+        <!-- Biomarkers Interpretations Section (Medical Study Library) -->
+        <div>
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-450 mb-3">Diagnostic Biomarkers & Study Backings</h3>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {{range .Biomarkers}}
+                <div class="p-4 rounded-lg border border-navy-900 bg-navy-900/40 relative">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-sm font-semibold text-slate-200">{{.DisplayName}}</span>
+                        <span class="text-[11px] px-2 py-0.5 rounded-full {{if eq .Status "optimal"}}bg-emerald-500/10 text-emerald-400{{else}}bg-yellow-500/10 text-yellow-400{{end}} font-mono">
+                            {{.Value}} {{.Unit}}
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-450 mb-2 font-medium italic">"{{.Summary}}"</p>
+                    <div class="text-[11px] text-slate-500 space-y-1">
+                        <div><span class="text-slate-400 font-medium">Longevity Impact:</span> {{.Implication}}</div>
+                        <div><span class="text-slate-400 font-medium">Study Reference:</span> <span class="text-cyan-400 hover:underline cursor-pointer">{{.Citation}}</span></div>
+                    </div>
+                </div>
+                {{else}}
+                <p class="text-xs text-slate-500 col-span-2 text-center py-4">No parsed biomarker results found for this client.</p>
+                {{end}}
+            </div>
+        </div>
+
+        <!-- RAG Practitioner Assistant Section -->
+        <div class="p-4 rounded-lg border border-navy-850 bg-navy-900/10" x-data="{
+            message: '',
+            loading: false,
+            messages: [
+                { sender: 'ai', text: 'Dr. Yerkes, I have analyzed this patient\'s genome variants, cardiorespiratory RER metrics, and gut microbiomix data. Ask me anything to retrieve literature studies or formulate protocols.' }
+            ],
+            async sendMessage() {
+                if (!this.message.trim()) return;
+                const userText = this.message;
+                this.messages.push({ sender: 'user', text: userText });
+                this.message = '';
+                this.loading = true;
+                
+                try {
+                    const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: userText })
+                    });
+                    const data = await response.json();
+                    this.messages.push({ sender: 'ai', text: data.reply });
+                } catch (err) {
+                    this.messages.push({ sender: 'ai', text: 'Error querying clinical RAG database.' });
+                } finally {
+                    this.loading = false;
+                    this.$nextTick(() => {
+                        const el = document.getElementById('coach-chat-window');
+                        el.scrollTop = el.scrollHeight;
+                    });
+                }
+            }
+        }">
+            <h4 class="text-xs font-semibold text-slate-350 mb-2 flex items-center gap-1.5">
+                <span class="h-2 w-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                AI Practitioner Research Assistant
+            </h4>
+            
+            <div id="coach-chat-window" class="h-48 overflow-y-auto mb-3 p-3 rounded bg-slate-950 border border-navy-900 space-y-3">
+                <template x-for="msg in messages">
+                    <div class="flex" :class="msg.sender === 'user' ? 'justify-end' : 'justify-start'">
+                        <div class="max-w-[85%] rounded p-2.5 text-[11px] leading-relaxed"
+                             :class="msg.sender === 'user' ? 'bg-cyan-600 text-white rounded-br-none' : 'bg-navy-900/60 text-slate-300 border border-navy-850 rounded-bl-none'">
+                            <span x-html="msg.text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')"></span>
+                        </div>
+                    </div>
+                </template>
+                <div x-show="loading" class="text-[11px] text-slate-500">Searching journals and patient profile...</div>
+            </div>
+
+            <form @submit.prevent="sendMessage()" class="flex gap-2">
+                <input type="text" x-model="message" placeholder="Ask about MTHFR polymorphism interactions or optimal RER interventions..."
+                       class="flex-1 rounded border border-navy-800 bg-navy-900 px-3 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:border-cyan-500 focus:outline-none transition">
+                <button type="submit" :disabled="loading" class="px-3 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold disabled:opacity-50 transition">
+                    Query
+                </button>
+            </form>
+        </div>
+
+        <!-- Clinical Notes History (PHI) -->
+        <div>
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-450 mb-3">Clinical / Medical Notes History (PHI)</h3>
+            <div id="notes-list" class="space-y-4">
+                {{range .Notes}}
+                <div class="p-4 rounded-lg border border-navy-850 bg-navy-900/30">
+                    <div class="flex justify-between items-center text-xs text-slate-450 border-b border-navy-900 pb-2 mb-2">
+                        <span>Logged by Clinician: {{.AuthorID}}</span>
+                        <span>{{.CreatedAt.Format "Jan 02, 2006 at 15:04 MST"}}</span>
+                    </div>
+                    <p class="text-sm text-slate-200 leading-relaxed">{{.Content}}</p>
+                </div>
+                {{else}}
+                <p id="no-notes-msg" class="text-xs text-slate-500 text-center py-8">No clinical notes recorded. Write the first note below.</p>
+                {{end}}
+            </div>
+        </div>
+    </div>
+
+    <!-- Notes Composer Form -->
+    <div class="border-t border-navy-900 pt-4 bg-navy-950">
+        <!-- Forms triggers API POST, prepends result to #notes-list, and resets input -->
+        <form hx-post="/api/clinical-notes" 
+              hx-target="#notes-list" 
+              hx-swap="afterbegin" 
+              hx-on::after-request="if(event.detail.successful) { this.reset(); document.getElementById('no-notes-msg')?.remove(); }"
+              class="space-y-3">
+            <input type="hidden" name="client_id" value="{{.Client.ID}}">
+            <label for="content" class="block text-xs font-medium text-slate-400">
+                Create Clinical Log (Note will be appended to the client's PHI profile)
+            </label>
+            <div class="flex gap-3">
+                <textarea id="content" name="content" required rows="2" placeholder="Patient shows optimal apoB recovery. Continue supplements..."
+                    class="appearance-none block w-full px-3 py-2 border border-navy-800 rounded-md shadow-sm bg-navy-900 text-slate-100 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 text-sm"></textarea>
+                <button type="submit" class="self-end px-4 py-2 border border-transparent rounded-md text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 transition shadow-[0_0_10px_rgba(16,185,129,0.15)]">
+                    Save Note
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{{end}}
+
+<!-- Define a partial template block for logs rendering -->
+{{block "audit-list" .}}
+<div class="space-y-3">
+    <div class="flex justify-between items-center mb-2">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400">Immutable Audit Trail</h3>
+        <button hx-get="/api/clinical-notes/{{.ClientID}}" hx-target="#detail-pane" hx-swap="innerHTML" class="text-xs text-emerald-400 hover:underline">Back to Notes</button>
+    </div>
+    {{range .Logs}}
+    <div class="p-3 rounded border border-navy-900 bg-navy-950 text-xs space-y-1">
+        <div class="flex justify-between text-slate-450">
+            <span class="font-semibold text-slate-350">Action: {{.Action}}</span>
+            <span>{{.CreatedAt.Format "Jan 02 15:04:05"}}</span>
+        </div>
+        <div class="text-slate-500">Actor ID: {{.ActorID}} | Role: {{.ActorRole}}</div>
+        <div class="text-slate-500">IP: {{if .IPAddress}}{{.IPAddress}}{{else}}N/A{{end}}</div>
+    </div>
+    {{else}}
+    <p class="text-xs text-slate-500 text-center py-8">No audit logs found for this client.</p>
+    {{end}}
+</div>
+{{end}}

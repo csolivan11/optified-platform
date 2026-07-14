@@ -1,0 +1,36 @@
+steps:
+  # ─── 1. Build Go Web Container ────────────────────────────────
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build',
+      '-t', 'us-east1-docker.pkg.dev/$PROJECT_ID/optified-registry/optified-platform:$SHORT_SHA',
+      '-t', 'us-east1-docker.pkg.dev/$PROJECT_ID/optified-registry/optified-platform:latest',
+      '.'
+    ]
+
+  # ─── 2. Build Python Parser Container ──────────────────────────
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build',
+      '-f', 'parser/Dockerfile',
+      '-t', 'us-east1-docker.pkg.dev/$PROJECT_ID/optified-registry/optified-parser-worker:$SHORT_SHA',
+      '-t', 'us-east1-docker.pkg.dev/$PROJECT_ID/optified-registry/optified-parser-worker:latest',
+      'parser'
+    ]
+
+  # ─── 3. Push Containers to Artifact Registry ───────────────────
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-east1-docker.pkg.dev/$PROJECT_ID/optified-registry/optified-platform:$SHORT_SHA']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-east1-docker.pkg.dev/$PROJECT_ID/optified-registry/optified-platform:latest']
+    
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-east1-docker.pkg.dev/$PROJECT_ID/optified-registry/optified-parser-worker:$SHORT_SHA']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-east1-docker.pkg.dev/$PROJECT_ID/optified-registry/optified-parser-worker:latest']
+
+images:
+  - 'us-east1-docker.pkg.dev/$PROJECT_ID/optified-registry/optified-platform:$SHORT_SHA'
+  - 'us-east1-docker.pkg.dev/$PROJECT_ID/optified-registry/optified-platform:latest'
+  - 'us-east1-docker.pkg.dev/$PROJECT_ID/optified-registry/optified-parser-worker:$SHORT_SHA'
+  - 'us-east1-docker.pkg.dev/$PROJECT_ID/optified-registry/optified-parser-worker:latest'

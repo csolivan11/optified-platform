@@ -1,0 +1,110 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: optified-app
+  namespace: optified
+  labels:
+    app: optified-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: optified-app
+  template:
+    metadata:
+      labels:
+        app: optified-app
+    spec:
+      serviceAccountName: optified-app-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: nextjs
+        image: us-east1-docker.pkg.dev/optified-prod/optified-registry/optified-platform:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3000
+          name: http
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "512Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1024Mi"
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "3000"
+        - name: DB_HOST
+          value: "127.0.0.1" # Connecting to Cloud SQL Auth Proxy sidecar locally
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_NAME
+          value: "optified"
+        - name: DB_USER
+          value: "optified-app-k8s@optified-prod.iam"
+        - name: SUPABASE_JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: optified-secrets
+              key: SUPABASE_JWT_SECRET
+        - name: NEXT_PUBLIC_SUPABASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: optified-config
+              key: NEXT_PUBLIC_SUPABASE_URL
+        - name: NEXT_PUBLIC_SUPABASE_ANON_KEY
+          valueFrom:
+            secretKeyRef:
+              name: optified-secrets
+              key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        - name: RESEND_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: optified-secrets
+              key: RESEND_API_KEY
+        - name: NEXT_PUBLIC_APP_URL
+          valueFrom:
+            configMapKeyRef:
+              name: optified-config
+              key: NEXT_PUBLIC_APP_URL
+        volumeMounts:
+        - name: tmp-volume
+          mountPath: /tmp
+        - name: secrets-store-inline
+          mountPath: /mnt/secrets
+          readOnly: true
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+      volumes:
+      - name: tmp-volume
+        emptyDir: {}
+      - name: secrets-store-inline
+        csi:
+          driver: secrets-store.csi.k8s.io
+          readOnly: true
+          volumeAttributes:
+            secretProviderClass: "optified-secrets-provider"

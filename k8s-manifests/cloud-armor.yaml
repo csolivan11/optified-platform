@@ -1,0 +1,44 @@
+# Google Cloud Armor Security Policy Rules Manifest (FedRAMP Moderate Baseline)
+# Apply via gcloud cmd or Terraform cloudarmor integrations.
+
+securityPolicy:
+  name: optified-armor-policy
+  description: "WAF security filters blocking SQLi, XSS, Path Traversal, and RCE for GKE ingress."
+  rules:
+    # ─── Rule 1: Block SQL Injection (SQLi) ─────────────────────
+    - action: deny(403)
+      priority: 1000
+      match:
+        expr: evaluatePreconfiguredExpr('sqli-v33-stable')
+      description: "Mitigate SQL Injection Vulnerability Exploits (OWASP CRS)"
+
+    # ─── Rule 2: Block Cross-Site Scripting (XSS) ───────────────
+    - action: deny(403)
+      priority: 1100
+      match:
+        expr: evaluatePreconfiguredExpr('xss-v33-stable')
+      description: "Mitigate Cross-Site Scripting Vulnerability Exploits (OWASP CRS)"
+
+    # ─── Rule 3: Block Path Traversal (LFI/RFI) ─────────────────
+    - action: deny(403)
+      priority: 1200
+      match:
+        expr: evaluatePreconfiguredExpr('lfi-v33-stable')
+      description: "Mitigate Path Traversal / Local File Inclusion Vulnerabilities"
+
+    # ─── Rule 4: Block Remote Code Execution (RCE) ──────────────
+    - action: deny(403)
+      priority: 1300
+      match:
+        expr: evaluatePreconfiguredExpr('rce-v33-stable')
+      description: "Mitigate Remote Code Execution Vulnerability Exploits"
+
+    # ─── Rule 5: Default Allow Rule ─────────────────────────────
+    - action: allow
+      priority: 2147483647
+      match:
+        versionedExpr: SRC_IPS_V1
+        config:
+          srcIpRanges:
+            - "*"
+      description: "Default allow-all traffic fallback"

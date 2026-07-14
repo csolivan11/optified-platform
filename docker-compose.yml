@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  # ─── 1. PostgreSQL Database ──────────────────────────────────
+  db:
+    image: postgres:15-alpine
+    container_name: optified-db
+    environment:
+      POSTGRES_DB: optified
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: local-db-password
+    ports:
+      - "5432:5432"
+    volumes:
+      - optified_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d optified"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ─── 2. Google Cloud Storage Emulator ─────────────────────────
+  gcs-emulator:
+    image: oittaa/gcs-emulator:latest
+    container_name: optified-gcs-emulator
+    ports:
+      - "9090:9090"
+    environment:
+      - PORT=9090
+
+  # ─── 3. Google Cloud Pub/Sub Emulator ─────────────────────────
+  pubsub-emulator:
+    image: google/cloud-sdk:alpine
+    container_name: optified-pubsub-emulator
+    ports:
+      - "8085:8085"
+    command: gcloud beta emulators pubsub start --host-port=0.0.0.0:8085
+
+  # ─── 4. Go Web Server ─────────────────────────────────────────
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: optified-go-web
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=local-db-password
+      - DB_NAME=optified
+      - GCP_PROJECT=optified-prod
+      - NODE_ENV=development
+      - SUPABASE_JWT_SECRET=local-jwt-secret-stub-key
+      - STORAGE_EMULATOR_HOST=http://gcs-emulator:9090
+      - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
+    depends_on:
+      db:
+        condition: service_healthy
+      gcs-emulator:
+        condition: service_started
+      pubsub-emulator:
+        condition: service_started
+
+  # ─── 5. Python Ingestion Worker ────────────────────────────────
+  worker:
+    build:
+      context: ./parser
+      dockerfile: Dockerfile
+    container_name: optified-parser-worker
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=local-db-password
+      - DB_NAME=optified
+      - GCP_PROJECT=optified-prod
+      - NODE_ENV=development
+      - STORAGE_EMULATOR_HOST=http://gcs-emulator:9090
+      - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
+      - PUBSUB_SUBSCRIPTION=optified-phi-uploads-sub
+    depends_on:
+      db:
+        condition: service_healthy
+      pubsub-emulator:
+        condition: service_started
+
+volumes:
+  optified_db_data:

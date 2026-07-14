@@ -1,0 +1,46 @@
+name: Optified CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, staging ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # ─── 1. Run Testing Suites ──────────────────────────────────
+  test:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Setup Go Environment
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache-dependency-path: backend/go.sum
+
+      - name: Run Go Tests
+        run: |
+          cd backend
+          go test -v ./...
+
+      # Setup Python Environment
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+          cache-dependency-path: parser/requirements.txt
+
+      - name: Install Python Dependencies
+        run: |
+          pip install -r parser/requirements.txt
+          pip install pdfplumber
+
+      - name: Run Python Parser Tests
+        run: |
+          cd parser
+          python -m unittest parser_test.py

@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: optified-parser-worker
+  namespace: optified
+  labels:
+    app: optified-parser-worker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: optified-parser-worker
+  template:
+    metadata:
+      labels:
+        app: optified-parser-worker
+    spec:
+      serviceAccountName: optified-app-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: python-worker
+        image: us-east1-docker.pkg.dev/optified-prod/optified-registry/optified-parser-worker:latest
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: DB_HOST
+          value: "127.0.0.1" # Connecting to Cloud SQL Auth Proxy sidecar locally
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_NAME
+          value: "optified"
+        - name: DB_USER
+          value: "optified-app-k8s@optified-prod.iam"
+        - name: GCP_PROJECT
+          value: "optified-prod"
+        - name: PUBSUB_SUBSCRIPTION
+          value: "optified-phi-uploads-sub"
+        volumeMounts:
+        - name: tmp-volume
+          mountPath: /tmp
+      volumes:
+      - name: tmp-volume
+        emptyDir: {}

@@ -1,0 +1,83 @@
+{{define "layout"}}
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optified - Premium Health Optimization</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Manrope', 'sans-serif'],
+                    },
+                    colors: {
+                        navy: {
+                            50: '#f4f6f8',
+                            100: '#e7ebf0',
+                            200: '#c5cedb',
+                            300: '#94a5bd',
+                            400: '#5f779b',
+                            500: '#3e587e',
+                            600: '#192C4C', // Primary Brand Color
+                            700: '#233857',
+                            800: '#1a2a43',
+                            900: '#0f1828',
+                            950: '#070b14',
+                        },
+                        success: '#10b981', // Glow Green
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt93HyVTCmIPbh9YAE/N7fd8KxbH3dyeGW76xYiW/33fPzQx6GGi1f4spwsutE" crossorigin="anonymous"></script>
+    <!-- Alpine.js -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="h-full flex flex-col font-sans" hx-headers='{"Accept": "text/html"}'>
+    <!-- Navigation / Header -->
+    <header class="border-b border-navy-800 bg-navy-950/80 backdrop-blur-md sticky top-0 z-50">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="flex h-16 items-center justify-between">
+                <div class="flex items-center gap-8">
+                    <span class="text-xl font-bold tracking-wider text-slate-100 flex items-center gap-2">
+                        <span class="h-3 w-3 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981]"></span>
+                        OPTIFIED
+                    </span>
+                    <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-400">
+                        <a href="/dashboard" class="text-slate-200 hover:text-white transition">Dashboard</a>
+                        <a href="/coach" class="hover:text-white transition">Coach Console</a>
+                    </nav>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div id="user-badge" class="text-xs text-slate-400 border border-navy-800 rounded-full px-3 py-1 bg-navy-900">
+                        Secure Workload (FedRAMP)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div id="content-pane">
+            {{template "content" .}}
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-navy-900 bg-navy-950/50 py-6 text-center text-xs text-slate-500">
+        <p>© 2026 Optified Medical. Hardened assured workload perimeter. HIPAA / GDPR Compliant.</p>
+    </footer>
+</body>
+</html>
+{{end}}

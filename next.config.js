@@ -1,11 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  output: 'export',
   images: {
-    remotePatterns: [
-      // Add Supabase Storage host here when set up, e.g.:
-      // { protocol: 'https', hostname: '<project>.supabase.co' }
-    ],
+    unoptimized: true,
   },
 };
 
