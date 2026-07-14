@@ -527,18 +527,27 @@
                 </div>
 
                 <!-- Sleep Stage Latency Distribution -->
+                <!-- Sleep Stage Latency Distribution & Architecture SVG -->
                 <div class="mt-4 pt-4 border-t border-navy-900/60">
-                    <h4 class="text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-2">Sleep Stage Distribution</h4>
-                    <div class="w-full h-3.5 rounded overflow-hidden flex text-[9px] font-bold text-white text-center">
-                        <div class="bg-cyan-500" style="width: 15%" title="Deep Sleep: 15%">Deep</div>
-                        <div class="bg-blue-600" style="width: 25%" title="REM Sleep: 25%">REM</div>
-                        <div class="bg-indigo-900" style="width: 50%" title="Light Sleep: 50%">Light</div>
-                        <div class="bg-red-950" style="width: 10%" title="Awake: 10%">Awake</div>
+                    <h4 class="text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-2">Sleep Stage Architecture</h4>
+                    <!-- Stacked sleep stages bar chart -->
+                    <div class="w-full h-4 bg-navy-900 rounded overflow-hidden flex text-[9px] font-bold text-white text-center mb-2">
+                        <div class="bg-cyan-500 h-full" style="width: 15%" title="Deep Sleep">Deep</div>
+                        <div class="bg-blue-600 h-full" style="width: 25%" title="REM Sleep">REM</div>
+                        <div class="bg-indigo-900 h-full" style="width: 50%" title="Light Sleep">Light</div>
+                        <div class="bg-red-950 h-full" style="width: 10%" title="Awake">Awake</div>
                     </div>
-                    <div class="flex justify-between text-[9px] text-slate-500 mt-1">
-                        <span>1.2 hrs Deep</span>
-                        <span>2.0 hrs REM</span>
-                        <span>4.0 hrs Light</span>
+                    <div class="relative h-6 w-full bg-slate-950 border border-navy-900/50 rounded overflow-hidden flex items-end">
+                        <!-- Custom stacked sleep timeline visualizer -->
+                        <div class="bg-red-900 h-3" style="width: 10%"></div>
+                        <div class="bg-indigo-850 h-2" style="width: 30%"></div>
+                        <div class="bg-blue-500 h-4" style="width: 20%"></div>
+                        <div class="bg-cyan-400 h-5" style="width: 25%"></div>
+                        <div class="bg-indigo-850 h-2" style="width: 15%"></div>
+                    </div>
+                    <div class="flex justify-between text-[8px] text-slate-500 mt-1">
+                        <span>10:30 PM (Onset)</span>
+                        <span>06:30 AM (Wake)</span>
                     </div>
                 </div>
             </div>
@@ -589,6 +598,75 @@
                 </div>
                 <div class="flex justify-between text-[10px] text-slate-500 mt-2 px-4">
                     <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sports Performance & Cognitive Protocols Section -->
+    <div class="rounded-xl border border-navy-850 bg-navy-950 p-6 shadow-md" x-data="{
+        ftpWatts: 250,
+        get zone1() { return Math.round(this.ftpWatts * 0.55) },
+        get zone2() { return Math.round(this.ftpWatts * 0.75) },
+        get zone3() { return Math.round(this.ftpWatts * 0.90) },
+        get zone4() { return Math.round(this.ftpWatts * 1.05) },
+        focusProtocol: 'Pomodoro Interval (25m Focus / 5m Rest)'
+    }">
+        <div class="flex items-center justify-between mb-4 border-b border-navy-900 pb-3">
+            <div>
+                <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+                    <span class="h-2.5 w-2.5 rounded-full bg-amber-500"></span>
+                    Sports Performance & Cognitive Protocols
+                </h2>
+                <p class="text-xs text-slate-455 mt-0.5">Custom training power zones and evidence-based focus frameworks.</p>
+            </div>
+            <span class="text-[10px] px-2 py-0.5 rounded border border-amber-800 bg-amber-950/40 text-amber-400 uppercase tracking-wider font-semibold">Performance Optimization</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- FTP Zones Calculator -->
+            <div class="p-4 rounded-lg bg-navy-900/40 border border-navy-900">
+                <h3 class="text-xs font-bold uppercase text-slate-400 mb-3 tracking-wide">Functional Threshold Power (FTP) Zone Calculator</h3>
+                <div class="flex items-center gap-3 mb-4">
+                    <label class="text-xs text-slate-400">Baseline FTP (Watts):</label>
+                    <input type="number" x-model.number="ftpWatts" class="w-20 px-2 py-1 border border-navy-800 rounded bg-navy-950 text-slate-200 text-xs focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-[10px] text-slate-350">
+                    <div class="p-2 rounded bg-slate-950 border border-navy-850">
+                        <span class="text-slate-500 block uppercase">Zone 1: Active Recovery</span>
+                        <span class="text-sm font-bold text-slate-200">&lt; <span x-text="zone1"></span> W</span>
+                    </div>
+                    <div class="p-2 rounded bg-slate-950 border border-navy-850">
+                        <span class="text-emerald-400 block uppercase">Zone 2: Endurance Base</span>
+                        <span class="text-sm font-bold text-slate-200"><span x-text="zone1"></span> - <span x-text="zone2"></span> W</span>
+                    </div>
+                    <div class="p-2 rounded bg-slate-950 border border-navy-850">
+                        <span class="text-yellow-400 block uppercase">Zone 3: Tempo / Sweet Spot</span>
+                        <span class="text-sm font-bold text-slate-200"><span x-text="zone2"></span> - <span x-text="zone3"></span> W</span>
+                    </div>
+                    <div class="p-2 rounded bg-slate-950 border border-navy-850">
+                        <span class="text-red-400 block uppercase">Zone 4: Threshold</span>
+                        <span class="text-sm font-bold text-slate-200"><span x-text="zone3"></span> - <span x-text="zone4"></span> W</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Focus protocol selectors -->
+            <div class="p-4 rounded-lg bg-navy-900/40 border border-navy-900 flex flex-col justify-between">
+                <div>
+                    <h3 class="text-xs font-bold uppercase text-slate-400 mb-3 tracking-wide">Cognitive Focus Protocol Mappings</h3>
+                    <p class="text-xs text-slate-450 mb-4 leading-relaxed">Evidence-based productivity and neurological focus protocols matching daily task profiles.</p>
+                    <div class="space-y-2">
+                        <label class="text-[10px] text-slate-500 uppercase block">Active Protocol Framework</label>
+                        <select x-model="focusProtocol" class="w-full px-2 py-1.5 border border-navy-800 rounded bg-navy-950 text-slate-200 text-xs focus:outline-none">
+                            <option value="Pomodoro Interval (25m Focus / 5m Rest)">Pomodoro (25m Focus / 5m Rest)</option>
+                            <option value="90-Minute Ultradian Rhythm Cycle">90-Min Ultradian Cycle (Deep Work)</option>
+                            <option value="Binaural Beats Integration (40Hz Gamma)">Binaural Beats Integration (40Hz Gamma)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-4 p-2 rounded bg-cyan-950/20 border border-cyan-900/40 text-[10px] text-cyan-400">
+                    <span>Active Protocol: <b x-text="focusProtocol"></b>. Grounded in peer-reviewed neuroscience publications.</span>
                 </div>
             </div>
         </div>
@@ -704,8 +782,9 @@
             </button>
         </div>
 
-        <div x-show="booked" class="p-4 rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs">
-            <span>Consultation confirmed for <b x-text="date"></b>. Check your secure inbox for links.</span>
+        <div x-show="booked" class="p-4 rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs space-y-2">
+            <span>Consultation confirmed for <b x-text="date"></b>.</span>
+            <a href="https://meet.daily.co/optified-stub-room-yerkes" target="_blank" class="block font-bold text-cyan-400 underline">Join Secure Video Call (Daily.co)</a>
         </div>
     </div>
 

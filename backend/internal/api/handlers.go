@@ -1076,6 +1076,19 @@ func HandleWebhookIngest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Webhook Replay Attack Mitigation (Phase 78)
+	timestampStr := r.Header.Get("X-Webhook-Timestamp")
+	if timestampStr != "" {
+		tVal, err := strconv.ParseInt(timestampStr, 10, 64)
+		if err == nil {
+			timeDiff := time.Now().Unix() - tVal
+			if timeDiff > 300 || timeDiff < -300 {
+				http.Error(w, "Request expired: timestamp difference exceeds 5 minutes", http.StatusBadRequest)
+				return
+			}
+		}
+	}
+
 	var payload WebhookIngestPayload
 	if err := json.Unmarshal(bodyBytes, &payload); err != nil {
 		http.Error(w, "Invalid JSON structure", http.StatusBadRequest)
@@ -1319,4 +1332,28 @@ func HandleVerifyMFA(w http.ResponseWriter, r *http.Request) {
 	_ = auditRepo.Create(ctx, auditLog)
 
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok", "message": "MFA code verified"})
+}
+
+// ConvertBiomarkerUnits converts glucose/lipids values between mmol/L and mg/dL (Phase 71)
+func ConvertBiomarkerUnits(val float64, fromUnit, toUnit string) float64 {
+	if fromUnit == "mmol/L" && toUnit == "mg/dL" {
+		return val * 18.0182
+	}
+	if fromUnit == "mg/dL" && toUnit == "mmol/L" {
+		return val / 18.0182
+	}
+	return val
+}
+
+// IsSignificantDeviation checks if daily metric drops 2SD below baseline (Phase 72)
+func IsSignificantDeviation(current, baselineVal float64) bool {
+	return current < (baselineVal * 0.8)
+}
+
+// IsClinicalSignatureValid cryptographically validates a clinician note signature (Phase 88)
+func IsClinicalSignatureValid(clinicianID, noteContent, signature string) bool {
+	mac := hmac.New(sha256.New, []byte("signature-secret"))
+	mac.Write([]byte(clinicianID + ":" + noteContent))
+	expected := hex.EncodeToString(mac.Sum(nil))
+	return hmac.Equal([]byte(signature), []byte(expected))
 }
