@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+
+	"github.com/go-chi/chi/v5"
 )
 
 func TestGenerateTailoredNutritionPlan(t *testing.T) {
@@ -102,6 +104,140 @@ func TestHandleCreateBillingInvoiceForbidden(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(HandleCreateBillingInvoice)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusForbidden {
+		t.Errorf("expected 403 Forbidden, got %v", rr.Code)
+	}
+}
+
+func TestHandleHorvathSimulation(t *testing.T) {
+	form := url.Values{}
+	form.Set("chronological_age", "45")
+	form.Set("methylation_rate", "0.78")
+
+	req, err := http.NewRequest("POST", "/api/longevity/horvath-simulation", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleHorvathSimulation)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Predicted Biological Age") {
+		t.Errorf("expected biological age prediction in output, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleCGMRangeConfig(t *testing.T) {
+	form := url.Values{}
+	form.Set("lower_bound", "75")
+	form.Set("upper_bound", "125")
+
+	req, err := http.NewRequest("POST", "/api/wearables/cgm-range", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleCGMRangeConfig)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Glycemic Targets Calibrated") {
+		t.Errorf("expected calibration message, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetPublicationMetadata(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/knowsitall/publication/35012345", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	
+	// Set chi routing context mock for PMID parameter
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("pmid", "35012345")
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+	handler := http.HandlerFunc(HandleGetPublicationMetadata)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Autophagy clears cell waste") {
+		t.Errorf("expected target abstract details, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleScheduleWorkout(t *testing.T) {
+	form := url.Values{}
+	form.Set("workout_type", "Norwegian 4x4 intervals at 90% HRmax")
+	form.Set("scheduled_date", "July 22 at 8:00 AM")
+
+	req, err := http.NewRequest("POST", "/api/fitness/schedule", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleScheduleWorkout)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Workout scheduled") {
+		t.Errorf("expected workout scheduled confirmation, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGutDiversityConfigForbidden(t *testing.T) {
+	form := url.Values{}
+	form.Set("client_id", "client-id-123")
+	form.Set("target_diversity", "7.5")
+
+	req, err := http.NewRequest("POST", "/api/diagnostics/gut-diversity", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	// Clients cannot configure diversity targets
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGutDiversityConfig)
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusForbidden {
