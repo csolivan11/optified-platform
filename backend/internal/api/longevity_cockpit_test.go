@@ -593,3 +593,95 @@ func TestHandleGetGutDiversityBaseline(t *testing.T) {
 		t.Errorf("expected baseline cohort comparisons content, got %s", rr.Body.String())
 	}
 }
+
+func TestHandleGetHorvathSimulationChart(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/longevity/horvath-simulation/chart", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetHorvathSimulationChart)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "<svg") {
+		t.Errorf("expected biological age chart SVG content, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleCGMTIREventTag(t *testing.T) {
+	form := url.Values{}
+	form.Set("meal_marker", "pre_workout")
+
+	req, err := http.NewRequest("POST", "/api/wearables/cgm-tir/event", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleCGMTIREventTag)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "tagged successfully as") {
+		t.Errorf("expected event tag confirmation message, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetScheduledWorkouts(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/fitness/schedule/list", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetScheduledWorkouts)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Norwegian 4x4 intervals") {
+		t.Errorf("expected scheduled workout items list content, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetGutPhylumBreakdown(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/diagnostics/gut-diversity/phylum", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetGutPhylumBreakdown)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Phylum Ratio") {
+		t.Errorf("expected phylum breakdown stats content, got %s", rr.Body.String())
+	}
+}

@@ -2634,3 +2634,142 @@ func HandleGetGutDiversityBaseline(w http.ResponseWriter, r *http.Request) {
 	`, baseline, color, status)))
 }
 
+// HandleGetHorvathSimulationChart returns biological age trajectory line chart SVG
+func HandleGetHorvathSimulationChart(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	// Inline responsive line chart SVG representing trajectory trends over time
+	svg := `
+		<svg viewBox="0 0 400 120" class="w-full h-full overflow-visible">
+			<!-- Grid Lines -->
+			<line x1="40" y1="20" x2="380" y2="20" stroke="#1e293b" stroke-width="0.5" stroke-dasharray="2 2" />
+			<line x1="40" y1="60" x2="380" y2="60" stroke="#1e293b" stroke-width="0.5" stroke-dasharray="2 2" />
+			<line x1="40" y1="100" x2="380" y2="100" stroke="#1e293b" stroke-width="0.5" stroke-dasharray="2 2" />
+
+			<!-- Axes -->
+			<line x1="40" y1="10" x2="40" y2="110" stroke="#334155" stroke-width="1" />
+			<line x1="40" y1="110" x2="390" y2="110" stroke="#334155" stroke-width="1" />
+
+			<!-- Y-Axis Labels -->
+			<text x="32" y="24" fill="#64748b" font-size="8" text-anchor="end" font-family="monospace">50y</text>
+			<text x="32" y="64" fill="#64748b" font-size="8" text-anchor="end" font-family="monospace">40y</text>
+			<text x="32" y="104" fill="#64748b" font-size="8" text-anchor="end" font-family="monospace">30y</text>
+
+			<!-- X-Axis Labels -->
+			<text x="40" y="120" fill="#64748b" font-size="8" text-anchor="middle" font-family="monospace">Base</text>
+			<text x="150" y="120" fill="#64748b" font-size="8" text-anchor="middle" font-family="monospace">Run 1</text>
+			<text x="260" y="120" fill="#64748b" font-size="8" text-anchor="middle" font-family="monospace">Run 2</text>
+			<text x="370" y="120" fill="#64748b" font-size="8" text-anchor="middle" font-family="monospace">Goal</text>
+
+			<!-- Target Threshold Line -->
+			<line x1="40" y1="75" x2="380" y2="75" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3 3" />
+			<text x="382" y="78" fill="#f59e0b" font-size="7" font-family="monospace">Target</text>
+
+			<!-- Trajectory Line -->
+			<path d="M 40 40 L 150 55 L 260 85 L 370 95" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" />
+			
+			<!-- Trajectory Dots -->
+			<circle cx="40" cy="40" r="3" fill="#06b6d4" />
+			<circle cx="150" cy="55" r="3" fill="#06b6d4" />
+			<circle cx="260" cy="85" r="3" fill="#06b6d4" />
+			<circle cx="370" cy="95" r="3" fill="#22c55e" />
+		</svg>
+	`
+	w.Write([]byte(svg))
+}
+
+// HandleCGMTIREventTag tags a custom glycemic meal marker configuration
+func HandleCGMTIREventTag(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	clientRole, _ := ctx.Value(UserRoleKey).(string)
+
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	mealMarker := r.FormValue("meal_marker")
+	if mealMarker == "" {
+		http.Error(w, "Missing meal_marker parameter", http.StatusBadRequest)
+		return
+	}
+
+	action := "tagged_cgm_meal_reading"
+	resType := "wearables_event"
+	ip := r.RemoteAddr
+	ua := r.UserAgent()
+	meta := fmt.Sprintf(`{"meal_marker": %q}`, mealMarker)
+
+	auditLog := repository.AuditLog{
+		ActorID:        clientID,
+		ActorRole:      clientRole,
+		Action:         action,
+		ResourceType:   &resType,
+		TargetClientID: &clientID,
+		IPAddress:      &ip,
+		UserAgent:      &ua,
+		Metadata:       &meta,
+	}
+	auditRepo := &repository.AuditLogRepo{}
+	_ = auditRepo.Create(ctx, auditLog)
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(fmt.Sprintf(`
+		<div class="p-2 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] mt-2">
+			Glycemic reading tagged successfully as: <b class="text-slate-100 font-bold uppercase font-mono">%s</b>.
+		</div>
+	`, mealMarker)))
+}
+
+// HandleGetScheduledWorkouts returns a list of future scheduled training protocols
+func HandleGetScheduledWorkouts(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Dynamic mock list
+	workouts := []struct {
+		Type       string
+		Scheduled  string
+		Timezone   string
+		Recurrence string
+	}{
+		{Type: "Norwegian 4x4 intervals at 90% HRmax", Scheduled: "July 22 at 8:00 AM", Timezone: "EST", Recurrence: "weekly"},
+		{Type: "Zone 2 aerobic endurance (90-minute steady-state)", Scheduled: "July 25 at 6:30 AM", Timezone: "PST", Recurrence: "biweekly"},
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	html := ""
+	for _, wk := range workouts {
+		html += fmt.Sprintf(`
+			<div class="p-2 rounded bg-slate-950 border border-navy-850 flex justify-between items-center text-[10px]">
+				<div>
+					<span class="text-amber-400 block font-semibold">%s</span>
+					<span class="text-slate-500 text-[9px] block">Scheduled: %s %s</span>
+				</div>
+				<span class="px-1.5 py-0.5 rounded bg-amber-950/40 text-amber-455 border border-amber-900/30 font-mono text-[8px] uppercase font-bold">%s</span>
+			</div>`,
+			wk.Type, wk.Scheduled, wk.Timezone, wk.Recurrence,
+		)
+	}
+	w.Write([]byte(html))
+}
+
+// HandleGetGutPhylumBreakdown returns Bacteroidetes vs Firmicutes phyla ratios as HTML description stats
+func HandleGetGutPhylumBreakdown(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(`
+		<span>Phylum Ratio: <b class="text-slate-200">F/B Ratio: 0.84</b> (Optimal Anti-Inflammatory Baseline)</span>
+	`))
+}
+
