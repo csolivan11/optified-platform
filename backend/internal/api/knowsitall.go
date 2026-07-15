@@ -289,10 +289,18 @@ func HandleUploadPaperPDF(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	citationCountStr := r.FormValue("citation_count")
+	citationCount, err := strconv.Atoi(citationCountStr)
+	if err != nil || citationCount < 0 {
+		http.Error(w, "Invalid citation count value (must be >= 0)", http.StatusBadRequest)
+		return
+	}
+
 	slog.Info("Academic paper uploaded for analysis", 
 		slog.String("filename", header.Filename), 
 		slog.Float64("impact_factor", impactFactor),
 		slog.String("tags", tags),
+		slog.Int("citations", citationCount),
 	)
 
 	// Mock parsing result (Phase 65 uploader)
@@ -318,9 +326,10 @@ func HandleUploadPaperPDF(w http.ResponseWriter, r *http.Request) {
 			<span class="font-bold block mb-1">Paper Parsed and Ingested successfully:</span>
 			Title: <span class="text-slate-200">%s</span><br>
 			Tags: <span class="px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 font-mono text-[9px]">%s</span><br>
+			Citations: <span class="text-slate-100 font-mono font-bold">%d</span><br>
 			Abstract: <span class="text-slate-355 italic block mt-1">%s</span>
 		</div>
-	`, parsedTitle, tags, parsedAbstract)))
+	`, parsedTitle, tags, citationCount, parsedAbstract)))
 }
 
 // HandleGetPublicationsList returns indexed academic papers, supporting focus tag filtering

@@ -523,3 +523,73 @@ func TestHandleGetGutDiversityAdvice(t *testing.T) {
 		t.Errorf("expected gut diversity protocol suggestions, got %s", rr.Body.String())
 	}
 }
+
+func TestHandleSetHorvathSimulationMilestone(t *testing.T) {
+	form := url.Values{}
+	form.Set("target_offset", "-8")
+
+	req, err := http.NewRequest("POST", "/api/longevity/horvath-simulation/milestone", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleSetHorvathSimulationMilestone)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Target biological age offset set to") {
+		t.Errorf("expected confirmation message, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetCGMHourlyStats(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/wearables/cgm-tir/hourly", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetCGMHourlyStats)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Hourly Average Glucose Levels") {
+		t.Errorf("expected cgm hourly statistics, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetGutDiversityBaseline(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/diagnostics/gut-diversity/baseline", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetGutDiversityBaseline)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Cohort Baseline") {
+		t.Errorf("expected baseline cohort comparisons content, got %s", rr.Body.String())
+	}
+}

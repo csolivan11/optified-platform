@@ -1809,6 +1809,7 @@ func HandleScheduleWorkout(w http.ResponseWriter, r *http.Request) {
 	scheduledDate := r.FormValue("scheduled_date")
 	recurrence := r.FormValue("recurrence")
 	timezone := r.FormValue("timezone")
+	notes := r.FormValue("notes")
 	if recurrence == "" {
 		recurrence = "once"
 	}
@@ -1826,7 +1827,7 @@ func HandleScheduleWorkout(w http.ResponseWriter, r *http.Request) {
 	resType := "fitness_protocol"
 	ip := r.RemoteAddr
 	ua := r.UserAgent()
-	meta := fmt.Sprintf(`{"workout_type": %q, "scheduled_date": %q, "recurrence": %q, "timezone": %q}`, workoutType, scheduledDate, recurrence, timezone)
+	meta := fmt.Sprintf(`{"workout_type": %q, "scheduled_date": %q, "recurrence": %q, "timezone": %q, "notes": %q}`, workoutType, scheduledDate, recurrence, timezone, notes)
 
 	auditLog := repository.AuditLog{
 		ActorID:        clientID,
@@ -1844,9 +1845,10 @@ func HandleScheduleWorkout(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write([]byte(fmt.Sprintf(`
 		<div class="p-2.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px]">
-			Workout scheduled: <b class="text-slate-100">%s</b> on %s %s (Pattern: <span class="uppercase font-mono font-semibold">%s</span>).
+			Workout scheduled: <b class="text-slate-100">%s</b> on %s %s (Pattern: <span class="uppercase font-mono font-semibold">%s</span>).<br/>
+			<span class="text-slate-350 italic mt-1 block">Notes: %s</span>
 		</div>
-	`, workoutType, scheduledDate, timezone, recurrence)))
+	`, workoutType, scheduledDate, timezone, recurrence, notes)))
 }
 
 // HandleGutDiversityConfig updates target Shannon diversity index parameters
@@ -2503,5 +2505,132 @@ func HandleGetGutDiversityAdvice(w http.ResponseWriter, r *http.Request) {
 		<span class="block font-semibold text-[9px] uppercase text-amber-500 mb-0.5">Clinical Protocol Guidance</span>
 		<p class="text-[10px] text-slate-350 italic">%s</p>
 	`, advice)))
+}
+
+// HandleSetHorvathSimulationMilestone stores biological target age offset milestones
+func HandleSetHorvathSimulationMilestone(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	clientRole, _ := ctx.Value(UserRoleKey).(string)
+
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	offsetStr := r.FormValue("target_offset")
+	offset, err := strconv.ParseFloat(offsetStr, 64)
+	if err != nil || offset > 0 {
+		http.Error(w, "Invalid target bio age offset milestone", http.StatusBadRequest)
+		return
+	}
+
+	action := "configured_horvath_milestone"
+	resType := "simulation_goal"
+	ip := r.RemoteAddr
+	ua := r.UserAgent()
+	meta := fmt.Sprintf(`{"target_offset": %.1f}`, offset)
+
+	auditLog := repository.AuditLog{
+		ActorID:        clientID,
+		ActorRole:      clientRole,
+		Action:         action,
+		ResourceType:   &resType,
+		TargetClientID: &clientID,
+		IPAddress:      &ip,
+		UserAgent:      &ua,
+		Metadata:       &meta,
+	}
+	auditRepo := &repository.AuditLogRepo{}
+	_ = auditRepo.Create(ctx, auditLog)
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("HX-Trigger", "horvathMilestoneUpdated")
+	w.Write([]byte(fmt.Sprintf(`
+		<div class="p-2 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] mt-2">
+			Target biological age offset set to: <b class="text-slate-100 font-bold">%.1f yrs</b>.
+		</div>
+	`, offset)))
+}
+
+// HandleGetCGMHourlyStats returns mock hourly averages telemetry data
+func HandleGetCGMHourlyStats(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(`
+		<div class="space-y-1 text-[10px]">
+			<div class="flex justify-between items-center text-slate-400 uppercase tracking-wider text-[8px] font-semibold">
+				<span>Hourly Average Glucose Levels (Last 4 Hours)</span>
+				<span class="text-emerald-400 font-bold">In Target</span>
+			</div>
+			<div class="grid grid-cols-4 gap-2 text-center text-slate-200 mt-1 font-mono">
+				<div class="p-1 rounded bg-navy-950 border border-navy-850">
+					<div class="text-slate-500 text-[8px]">08:00</div>
+					<div class="font-bold">94</div>
+				</div>
+				<div class="p-1 rounded bg-navy-950 border border-navy-850">
+					<div class="text-slate-500 text-[8px]">09:00</div>
+					<div class="font-bold">102</div>
+				</div>
+				<div class="p-1 rounded bg-navy-950 border border-navy-850">
+					<div class="text-slate-500 text-[8px]">10:00</div>
+					<div class="font-bold">115</div>
+				</div>
+				<div class="p-1 rounded bg-navy-950 border border-navy-850">
+					<div class="text-slate-500 text-[8px]">11:00</div>
+					<div class="font-bold">89</div>
+				</div>
+			</div>
+		</div>
+	`))
+}
+
+// HandleGetGutDiversityBaseline returns current gut Shannon index vs age-matched cohorts
+func HandleGetGutDiversityBaseline(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	score := 7.8
+	if db.Pool != nil {
+		var metaStr string
+		err := db.Pool.QueryRow(ctx,
+			`SELECT metadata FROM public.audit_logs 
+			 WHERE target_client_id = $1 AND action = 'adjusted_gut_diversity_target' 
+			 ORDER BY created_at DESC LIMIT 1`,
+			clientID,
+		).Scan(&metaStr)
+		if err == nil {
+			var meta map[string]interface{}
+			if err := json.Unmarshal([]byte(metaStr), &meta); err == nil {
+				if s, ok := meta["target_diversity"].(float64); ok {
+					score = s
+				}
+			}
+		}
+	}
+
+	baseline := 6.4
+	status := "Above Average"
+	color := "text-emerald-400"
+	if score < baseline {
+		status = "Below Average"
+		color = "text-amber-500"
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(fmt.Sprintf(`
+		<span>Cohort Baseline (Aged 40-50): <b class="text-slate-300">%.1f</b></span>
+		<span class="px-1 py-0.5 rounded bg-slate-900 border border-navy-800 text-[8px] font-bold uppercase %s">%s</span>
+	`, baseline, color, status)))
 }
 
