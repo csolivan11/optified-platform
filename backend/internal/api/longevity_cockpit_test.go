@@ -435,3 +435,91 @@ func TestHandleGetGutDiversityPercentile(t *testing.T) {
 		t.Errorf("expected gut index percentile content, got %s", rr.Body.String())
 	}
 }
+
+func TestHandleResetHorvathSimulation(t *testing.T) {
+	req, err := http.NewRequest("POST", "/api/longevity/horvath-simulation/reset", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleResetHorvathSimulation)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "successfully reset") {
+		t.Errorf("expected reset message, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetCGMAnomalies(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/wearables/cgm-tir/anomalies", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetCGMAnomalies)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Anomaly tracking limit") {
+		t.Errorf("expected cgm anomalies stats content, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetPublicationsList(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/knowsitall/publications?tag_filter=Autophagy", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetPublicationsList)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Autophagy & Longevity") {
+		t.Errorf("expected filtered publication entry, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetGutDiversityAdvice(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/diagnostics/gut-diversity/advice", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetGutDiversityAdvice)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Clinical Protocol Guidance") {
+		t.Errorf("expected gut diversity protocol suggestions, got %s", rr.Body.String())
+	}
+}

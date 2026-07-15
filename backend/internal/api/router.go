@@ -87,6 +87,7 @@ func ConfigureRouter() *chi.Mux {
 			// KnowsItAll AI & Knowledge Graph Routing
 			r.Post("/chat/knowsitall", HandleKnowsItAllChat)
 			r.Get("/knowsitall/graph", HandleGetKnowledgeGraph)
+			r.Get("/knowsitall/publications", HandleGetPublicationsList)
 			r.Get("/knowsitall/export-citations", HandleExportCitations)
 			r.Post("/knowsitall/upload-paper", HandleUploadPaperPDF)
 			r.Post("/webhook/quest", HandleQuestIngest)
@@ -98,19 +99,22 @@ func ConfigureRouter() *chi.Mux {
 			// Billing and Invoicing
 			r.Post("/billing/invoice", HandleCreateBillingInvoice)
 
-			// Longevity, Wearables, and Fitness extensions (Phases 152, 154, 156, 158, 160, 162, 164, 168, 170, 172, 174, 180)
+			// Longevity, Wearables, and Fitness extensions (Phases 152, 154, 156, 158, 160, 162, 164, 168, 170, 172, 174, 180, 182, 184, 190)
 			r.Post("/longevity/horvath-simulation", HandleHorvathSimulation)
 			r.Get("/longevity/horvath-simulation/history", HandleGetHorvathSimulationHistory)
 			r.Get("/longevity/horvath-simulation/delta", HandleGetHorvathSimulationDelta)
+			r.Post("/longevity/horvath-simulation/reset", HandleResetHorvathSimulation)
 			r.Post("/wearables/cgm-range", HandleCGMRangeConfig)
 			r.Post("/wearables/cgm-tir", HandleCGMTIRConfig)
 			r.Post("/wearables/cgm-tir/alert", HandleCGMTIRAlertConfig)
+			r.Get("/wearables/cgm-tir/anomalies", HandleGetCGMAnomalies)
 			r.Get("/knowsitall/publication/{pmid}", HandleGetPublicationMetadata)
 			r.Post("/fitness/schedule", HandleScheduleWorkout)
 			r.Post("/fitness/ftp-recalc", HandleFTPRecalc)
 			r.Post("/diagnostics/gut-diversity", HandleGutDiversityConfig)
 			r.Get("/diagnostics/gut-diversity/history", HandleGetGutDiversityHistory)
 			r.Get("/diagnostics/gut-diversity/percentile", HandleGetGutDiversityPercentile)
+			r.Get("/diagnostics/gut-diversity/advice", HandleGetGutDiversityAdvice)
 		})
 	})
 

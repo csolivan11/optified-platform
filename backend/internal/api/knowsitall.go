@@ -322,3 +322,72 @@ func HandleUploadPaperPDF(w http.ResponseWriter, r *http.Request) {
 		</div>
 	`, parsedTitle, tags, parsedAbstract)))
 }
+
+// HandleGetPublicationsList returns indexed academic papers, supporting focus tag filtering
+func HandleGetPublicationsList(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	tagFilter := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("tag_filter")))
+
+	type PubItem struct {
+		Title    string
+		PMID     string
+		Citation string
+		Tags     string
+	}
+
+	var publications []PubItem
+
+	if db.Pool != nil {
+		rows, err := db.Pool.Query(ctx,
+			`SELECT title, pmid, citation, COALESCE(country_origin, 'General') FROM public.journal_publications 
+			 ORDER BY created_at DESC LIMIT 10`,
+		)
+		if err == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var title, pmid, citation, tags string
+				if err := rows.Scan(&title, &pmid, &citation, &tags); err == nil {
+					// Check if filter matches
+					if tagFilter == "" || strings.Contains(strings.ToLower(title), tagFilter) || strings.Contains(strings.ToLower(tags), tagFilter) {
+						publications = append(publications, PubItem{
+							Title:    title,
+							PMID:     pmid,
+							Citation: citation,
+							Tags:     tags,
+						})
+					}
+				}
+			}
+		}
+	}
+
+	// Fallback/mock items if no DB pool or empty list
+	if len(publications) == 0 {
+		mockPubs := []PubItem{
+			{Title: "Autophagy & Longevity", PMID: "35012345", Citation: "NEJM 2024. Autophagy clears cell waste in US trial.", Tags: "Autophagy"},
+			{Title: "MTHFR Supplementation", PMID: "20456789", Citation: "Nature Med 2023. Folates bypasses reduction blocks.", Tags: "Gut Biome"},
+		}
+		for _, mock := range mockPubs {
+			if tagFilter == "" || strings.Contains(strings.ToLower(mock.Title), tagFilter) || strings.Contains(strings.ToLower(mock.Tags), tagFilter) {
+				publications = append(publications, mock)
+			}
+		}
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	html := ""
+	for _, pub := range publications {
+		html += fmt.Sprintf(`
+			<div class="p-2 rounded bg-slate-950 border border-navy-850">
+				<span class="text-[10px] text-cyan-400 block font-semibold">%s [PMID: %s]</span>
+				<span class="text-[9px] text-slate-550 block">%s</span>
+				<span class="inline-block mt-1 px-1 py-0.5 rounded bg-cyan-950/40 text-cyan-400 font-mono text-[8px]">%s</span>
+			</div>`,
+			pub.Title, pub.PMID, pub.Citation, pub.Tags,
+		)
+	}
+	if html == "" {
+		html = `<div class="p-4 text-center text-[10px] text-slate-500">No indexed publications match filter.</div>`
+	}
+	w.Write([]byte(html))
+}

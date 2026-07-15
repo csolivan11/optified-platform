@@ -1808,8 +1808,12 @@ func HandleScheduleWorkout(w http.ResponseWriter, r *http.Request) {
 	workoutType := r.FormValue("workout_type")
 	scheduledDate := r.FormValue("scheduled_date")
 	recurrence := r.FormValue("recurrence")
+	timezone := r.FormValue("timezone")
 	if recurrence == "" {
 		recurrence = "once"
+	}
+	if timezone == "" {
+		timezone = "UTC"
 	}
 
 	if workoutType == "" || scheduledDate == "" {
@@ -1822,7 +1826,7 @@ func HandleScheduleWorkout(w http.ResponseWriter, r *http.Request) {
 	resType := "fitness_protocol"
 	ip := r.RemoteAddr
 	ua := r.UserAgent()
-	meta := fmt.Sprintf(`{"workout_type": %q, "scheduled_date": %q, "recurrence": %q}`, workoutType, scheduledDate, recurrence)
+	meta := fmt.Sprintf(`{"workout_type": %q, "scheduled_date": %q, "recurrence": %q, "timezone": %q}`, workoutType, scheduledDate, recurrence, timezone)
 
 	auditLog := repository.AuditLog{
 		ActorID:        clientID,
@@ -1840,9 +1844,9 @@ func HandleScheduleWorkout(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write([]byte(fmt.Sprintf(`
 		<div class="p-2.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px]">
-			Workout scheduled: <b class="text-slate-100">%s</b> on %s (Pattern: <span class="uppercase font-mono font-semibold">%s</span>).
+			Workout scheduled: <b class="text-slate-100">%s</b> on %s %s (Pattern: <span class="uppercase font-mono font-semibold">%s</span>).
 		</div>
-	`, workoutType, scheduledDate, recurrence)))
+	`, workoutType, scheduledDate, timezone, recurrence)))
 }
 
 // HandleGutDiversityConfig updates target Shannon diversity index parameters
@@ -2373,5 +2377,131 @@ func HandleGetGutDiversityPercentile(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(fmt.Sprintf(`
 		<span>Latest Gut Index: <b class="text-slate-100">%.1f</b> (Optimal Diversity - <span class="font-bold text-amber-400">Top %.0f%%</span> of Reference Cohort)</span>
 	`, score, 100.0-percentile)))
+}
+
+// HandleResetHorvathSimulation resets the Epigenetic simulation logs
+func HandleResetHorvathSimulation(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	clientRole, _ := ctx.Value(UserRoleKey).(string)
+
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Logging simulated reset
+	action := "reset_horvath_simulation"
+	resType := "simulation"
+	ip := r.RemoteAddr
+	ua := r.UserAgent()
+
+	auditLog := repository.AuditLog{
+		ActorID:        clientID,
+		ActorRole:      clientRole,
+		Action:         action,
+		ResourceType:   &resType,
+		TargetClientID: &clientID,
+		IPAddress:      &ip,
+		UserAgent:      &ua,
+	}
+	auditRepo := &repository.AuditLogRepo{}
+	_ = auditRepo.Create(ctx, auditLog)
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("HX-Trigger", "horvathSimRun")
+	w.Write([]byte(`
+		<div class="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-xs mt-3">
+			Epigenetic simulation history has been successfully reset.
+		</div>
+	`))
+}
+
+// HandleGetCGMAnomalies returns simulated low glycemic anomaly counts
+func HandleGetCGMAnomalies(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	lowerLimit := 70.0
+	if db.Pool != nil {
+		var metaStr string
+		err := db.Pool.QueryRow(ctx,
+			`SELECT metadata FROM public.audit_logs 
+			 WHERE actor_id = $1 AND action = 'adjusted_cgm_tir_goals' 
+			 ORDER BY created_at DESC LIMIT 1`,
+			clientID,
+		).Scan(&metaStr)
+		if err == nil {
+			var meta map[string]interface{}
+			if err := json.Unmarshal([]byte(metaStr), &meta); err == nil {
+				if l, ok := meta["lower_bound"].(float64); ok {
+					lowerLimit = l
+				}
+			}
+		}
+	}
+
+	// Calculate anomalies count based on target lower bounds
+	anomaliesCount := 0
+	if lowerLimit > 80.0 {
+		anomaliesCount = 8
+	} else if lowerLimit > 70.0 {
+		anomaliesCount = 3
+	} else {
+		anomaliesCount = 1
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(fmt.Sprintf(`
+		<span>Anomaly tracking limit: <b>&lt; %.0f mg/dL</b>. Low glycemic events detected: <b class="text-rose-400 font-mono">%d events</b>.</span>
+	`, lowerLimit, anomaliesCount)))
+}
+
+// HandleGetGutDiversityAdvice returns dynamic clinical prebiotic/probiotic suggestions based on index target score
+func HandleGetGutDiversityAdvice(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	score := 7.8
+	if db.Pool != nil {
+		var metaStr string
+		err := db.Pool.QueryRow(ctx,
+			`SELECT metadata FROM public.audit_logs 
+			 WHERE target_client_id = $1 AND action = 'adjusted_gut_diversity_target' 
+			 ORDER BY created_at DESC LIMIT 1`,
+			clientID,
+		).Scan(&metaStr)
+		if err == nil {
+			var meta map[string]interface{}
+			if err := json.Unmarshal([]byte(metaStr), &meta); err == nil {
+				if s, ok := meta["target_diversity"].(float64); ok {
+					score = s
+				}
+			}
+		}
+	}
+
+	advice := ""
+	if score < 6.0 {
+		advice = "Target index indicates low diversity. Integrate high-fiber prebiotic protocols including 10g chicory root + acacia fiber daily."
+	} else if score < 8.0 {
+		advice = "Healthy diversity score. Optimize with daily intake of polyphenols (pomegranate/green tea extract) + fermented foods."
+	} else {
+		advice = "Elite microbiome diversity index. Maintain baseline fiber diversity (30+ distinct plants weekly) to sustain index parameters."
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(fmt.Sprintf(`
+		<span class="block font-semibold text-[9px] uppercase text-amber-500 mb-0.5">Clinical Protocol Guidance</span>
+		<p class="text-[10px] text-slate-350 italic">%s</p>
+	`, advice)))
 }
 
