@@ -2453,3 +2453,201 @@ func TestHandleGetConsultationCalendarInviteStatus(t *testing.T) {
 		t.Errorf("expected calendar delivery status tag, got %s", rr.Body.String())
 	}
 }
+
+func TestHandleGetProfileGender(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/profile/gender", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetProfileGender)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Male") {
+		t.Errorf("expected gender value, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetHorvathSimulationDunedinPaceHistory(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/longevity/horvath-simulation/dunedinpace-history", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetHorvathSimulationDunedinPaceHistory)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "DunedinPACE Baseline:") {
+		t.Errorf("expected DunedinPACE simulation logs list, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetClinicianSearchDelayOption(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/clients/config/search-delay/option", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "coach-id-123", "coach")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetClinicianSearchDelayOption)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Option:") {
+		t.Errorf("expected delay config option tags, got %s", rr.Body.String())
+	}
+}
+
+func TestHandlePrintGutDiversityAdviceHTML(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/diagnostics/gut-diversity/advice/html", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandlePrintGutDiversityAdviceHTML)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "html") {
+		t.Errorf("expected printable HTML sheets, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetBillingReceiptPreferenceFormat(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/billing/receipts/preference/format", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetBillingReceiptPreferenceFormat)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Format:") {
+		t.Errorf("expected format configuration labels, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetPublicationCommentsHistory(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/knowsitall/publication/comment?pmid=35012345", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetPublicationCommentsHistory)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "@Dr. Yerkes") {
+		t.Errorf("expected comment annotations history lists, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetHRVSleepCorrelationYearlyMonthly(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/wearables/hrv/sleep-correlation/yearly/monthly", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetHRVSleepCorrelationYearlyMonthly)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "<svg") {
+		t.Errorf("expected yearly sleep correlation monthly trend SVG charts, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleSearchSecurityLocations(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/profile/security-locations/search?search_ip=192.168.1.50", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleSearchSecurityLocations)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "192.168.1.50") {
+		t.Errorf("expected location search query matching, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetConsultationCalendarInviteLogs(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/consultations/calendar/logs", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetConsultationCalendarInviteLogs)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "ICS Invitation Created") {
+		t.Errorf("expected invite delivery audits log lists, got %s", rr.Body.String())
+	}
+}

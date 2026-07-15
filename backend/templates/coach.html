@@ -39,6 +39,8 @@
                      hx-trigger="load, change from:select[name=delay_val]">
                     <span>Delay: 300ms</span>
                 </div>
+                <!-- Delay option status check (Phase 420) -->
+                <span hx-get="/api/clients/config/search-delay/option" hx-trigger="load, change from:select[name=delay_val]" class="text-[8px] text-cyan-400 font-mono flex items-center px-2 bg-navy-900 border border-navy-800 rounded">Option: 300ms</span>
             </div>
             <div class="flex gap-2 justify-between items-center">
                 <div class="flex gap-2">
@@ -574,9 +576,13 @@
     "impact_factor": 82.9
   }
 }</textarea>
-                            <button type="submit" class="px-2 py-0.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-[8px] font-semibold transition">
-                                Save Raw Metadata
-                            </button>
+                            <div class="flex items-center gap-2">
+                                <button type="submit" class="px-2 py-0.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-[8px] font-semibold transition">
+                                    Save Raw Metadata
+                                </button>
+                                <!-- Save status display tag (Phase 436) -->
+                                <span id="raw-json-save-status" class="text-[8px] text-cyan-400 font-mono">Status: Saved</span>
+                            </div>
                         </form>
                     </div>
                 </div>

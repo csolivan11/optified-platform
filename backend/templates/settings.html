@@ -126,11 +126,17 @@
             <form hx-post="/api/profile/gender" hx-target="#gender-feedback" hx-swap="innerHTML" class="space-y-4 mt-4 pt-4 border-t border-navy-900">
                 <div>
                     <label for="gender" class="block text-xs font-semibold text-slate-400 mb-1">Gender Profile Identity</label>
-                    <select id="gender" name="gender" class="w-full px-3 py-2 border border-navy-800 rounded bg-navy-900 text-slate-200 text-xs focus:ring-cyan-500 focus:border-cyan-500">
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
-                        <option value="other">Non-binary / Other</option>
-                    </select>
+                    <div class="flex gap-2">
+                        <select id="gender" name="gender" class="w-full px-3 py-2 border border-navy-800 rounded bg-navy-900 text-slate-200 text-xs focus:ring-cyan-500 focus:border-cyan-500">
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Non-binary / Other</option>
+                        </select>
+                        <div class="flex items-center px-2 bg-navy-900 border border-navy-800 rounded text-[9px] text-cyan-400 font-mono whitespace-nowrap"
+                             hx-get="/api/profile/gender" hx-trigger="load">
+                            <span>Male</span>
+                        </div>
+                    </div>
                 </div>
                 <button type="submit" class="px-4 py-2 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs transition">
                     Save Gender Preference
@@ -207,6 +213,14 @@
                         Clear Log
                     </button>
                 </div>
+                <div class="mb-2">
+                    <input type="text" name="search_ip" placeholder="Search IP..."
+                           hx-get="/api/profile/security-locations/search"
+                           hx-trigger="keyup changed delay:300ms"
+                           hx-target="#security-locations-list"
+                           hx-swap="innerHTML"
+                           class="w-full px-2 py-1 border border-navy-800 rounded bg-navy-900 text-slate-200 text-[9px] focus:outline-none">
+                </div>
                 <div id="security-locations-list" hx-get="/api/profile/security-locations" hx-trigger="load" hx-swap="innerHTML" class="space-y-1 max-h-32 overflow-y-auto">
                     <p class="text-[9px] text-slate-500 animate-pulse">Loading location logs...</p>
                 </div>
@@ -239,6 +253,8 @@
                     <span class="text-[10px] text-slate-500">Receive copy of payments receipts instantly.</span>
                     <!-- Current receipt preference check (Phase 374) -->
                     <span hx-get="/api/billing/receipts/preference" hx-trigger="load, billingReceiptToggled from:body" class="text-[8px] text-cyan-400 block font-mono">Loading preferences status...</span>
+                    <!-- Format preference status check (Phase 424) -->
+                    <span hx-get="/api/billing/receipts/preference/format" hx-trigger="load, billingReceiptToggled from:body" class="text-[8px] text-cyan-400 block font-mono">Format: PDF</span>
                 </div>
                 <div class="flex items-center gap-1.5">
                     <select name="receipt_format" class="px-1 py-0.5 border border-navy-800 rounded bg-navy-950 text-slate-200 text-[9px] focus:outline-none">

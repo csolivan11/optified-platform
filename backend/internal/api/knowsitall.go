@@ -450,8 +450,12 @@ func HandleGetPublicationsList(w http.ResponseWriter, r *http.Request) {
 					<button hx-delete="/api/knowsitall/publication/comment" hx-target="#pub-comment-feedback-%s" hx-swap="innerHTML" hx-include="[name=pmid]" class="px-1 py-0.5 rounded bg-rose-600 hover:bg-rose-500 text-white text-[8px] font-semibold transition">Delete</button>
 				</form>
 				<div id="pub-comment-feedback-%s" class="text-[8px] text-amber-500 italic mt-0.5"></div>
+				<!-- Annotation comments inline logs list (Phase 426) -->
+				<div hx-get="/api/knowsitall/publication/comment?pmid=%s" hx-trigger="load, pubCommentUpdated from:body" class="mt-1 space-y-1 text-[7px] text-slate-400">
+					<p class="animate-pulse">Loading annotations history logs...</p>
+				</div>
 			</div>`,
-			pub.Title, pub.PMID, pub.Citation, pub.Tags, pub.PMID, pub.PMID, pub.PMID, pub.PMID, pub.PMID, pub.PMID, pub.PMID, pub.PMID,
+			pub.Title, pub.PMID, pub.Citation, pub.Tags, pub.PMID, pub.PMID, pub.PMID, pub.PMID, pub.PMID, pub.PMID, pub.PMID, pub.PMID, pub.PMID,
 		)
 	}
 	if html == "" {
