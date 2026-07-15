@@ -11,13 +11,23 @@
     <!-- Client Pipeline Panel -->
     <div class="lg:col-span-1 rounded-xl border border-navy-850 bg-navy-950 p-6 flex flex-col h-[75vh]">
         <h2 class="text-lg font-bold text-slate-100 mb-2">Assigned Client Pipeline</h2>
-        <div class="mb-4 space-y-2">
-            <input type="text" name="search" placeholder="Search clients by name..." 
-                   hx-get="/api/clients"
-                   hx-trigger="keyup changed delay:300ms"
-                   hx-target="#client-list-container"
-                   hx-swap="innerHTML"
-                   class="w-full px-3 py-1.5 border border-navy-800 rounded bg-navy-900 text-slate-200 text-xs focus:outline-none focus:border-cyan-500">
+        <div class="mb-4 space-y-2" x-data="{ delay: '300ms' }">
+            <div class="flex gap-2">
+                <input type="text" name="search" placeholder="Search clients by name..." 
+                       hx-get="/api/clients"
+                       hx-trigger="keyup changed delay:300ms"
+                       hx-target="#client-list-container"
+                       hx-swap="innerHTML"
+                       class="w-full px-3 py-1.5 border border-navy-800 rounded bg-navy-900 text-slate-200 text-xs focus:outline-none focus:border-cyan-500">
+                <select name="delay_val"
+                        hx-post="/api/clients/config/search-delay"
+                        hx-swap="none"
+                        class="px-1.5 py-0.5 border border-navy-800 rounded bg-navy-950 text-slate-200 text-[9px] focus:outline-none">
+                    <option value="300ms">300ms</option>
+                    <option value="500ms">500ms</option>
+                    <option value="1000ms">1000ms</option>
+                </select>
+            </div>
             <div class="flex gap-2 justify-between items-center">
                 <div class="flex gap-2">
                     <button hx-get="/api/clients?status=active" hx-target="#client-list-container" hx-swap="innerHTML"
@@ -516,6 +526,13 @@
                     <span class="font-bold text-[10px] text-cyan-400 block mb-1">Ingested Publication Preview Details</span>
                     <div hx-get="/api/knowsitall/upload-paper/preview" hx-trigger="load" hx-swap="innerHTML" class="text-[9px] text-slate-355 space-y-1">
                         <p class="animate-pulse">Loading preview data...</p>
+                    </div>
+                    <!-- Raw JSON parser viewer (Phase 361) -->
+                    <div class="mt-2 pt-2 border-t border-navy-900">
+                        <span class="text-[8px] font-bold text-slate-500 block uppercase mb-1">Raw Parsed JSON layout</span>
+                        <div hx-get="/api/knowsitall/upload-paper/raw-json" hx-trigger="load" hx-swap="innerHTML" class="font-mono text-[8px] bg-slate-900 p-1.5 rounded text-slate-400 overflow-x-auto">
+                            <p class="animate-pulse">Loading raw JSON layout...</p>
+                        </div>
                     </div>
                 </div>
                 <!-- Paper Ingest parser errors log checklist (Phase 336) -->

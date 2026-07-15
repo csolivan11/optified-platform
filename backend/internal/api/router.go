@@ -165,6 +165,19 @@ func ConfigureRouter() *chi.Mux {
 			r.Get("/diagnostics/gut-diversity/phylum/pdf", HandleExportGutPhylaPDF)
 			r.Get("/knowsitall/upload-paper/errors", HandleGetKnowsItAllParserErrors)
 			r.Post("/consultations/backup-phone", HandleRegisterConsultationBackupPhone)
+
+			// Phases 341-365 Extensions
+			r.Post("/profile/gender", HandleUpdateProfileGender)
+			r.Get("/longevity/horvath-simulation/dunedinpace", HandleGetHorvathSimulationDunedinPACE)
+			r.Post("/clients/config/search-delay", HandleSaveSearchDelayConfig)
+			r.Post("/diagnostics/gut-diversity/advice/email", HandleSendGutDiversityAdviceEmail)
+			r.Post("/billing/receipts/toggle", HandleToggleBillingReceipt)
+			r.Post("/knowsitall/publication/comment", HandleAddPublicationComment)
+			r.Get("/wearables/hrv/sleep-correlation", HandleGetHRVSleepCorrelation)
+			r.Get("/profile/security-locations", HandleGetSecurityLocations)
+			r.Post("/diagnostics/gut-diversity/phylum/alert/reset", HandleResetGutPhylumAlertThreshold)
+			r.Get("/knowsitall/upload-paper/raw-json", HandleGetKnowsItAllParserRawJSON)
+			r.Post("/consultations/calendar/cancel", HandleCancelConsultationCalendarICS)
 		})
 	})
 

@@ -1730,3 +1730,255 @@ func TestHandleListClientsSorting(t *testing.T) {
 		t.Errorf("expected 200 OK, got %v", rr.Code)
 	}
 }
+
+func TestHandleUpdateProfileGender(t *testing.T) {
+	form := url.Values{}
+	form.Set("gender", "female")
+
+	req, err := http.NewRequest("POST", "/api/profile/gender", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleUpdateProfileGender)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "FEMALE") {
+		t.Errorf("expected gender selection confirmation, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetHorvathSimulationDunedinPACE(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/longevity/horvath-simulation/dunedinpace", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetHorvathSimulationDunedinPACE)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "DunedinPACE Rate:") {
+		t.Errorf("expected DunedinPACE rate stats, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleSaveSearchDelayConfig(t *testing.T) {
+	form := url.Values{}
+	form.Set("delay_val", "500ms")
+
+	req, err := http.NewRequest("POST", "/api/clients/config/search-delay", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "coach-id-123", "coach")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleSaveSearchDelayConfig)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+}
+
+func TestHandleSendGutDiversityAdviceEmail(t *testing.T) {
+	req, err := http.NewRequest("POST", "/api/diagnostics/gut-diversity/advice/email", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleSendGutDiversityAdviceEmail)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "dispatched to your registered mailbox") {
+		t.Errorf("expected email dispatch confirmation, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleToggleBillingReceipt(t *testing.T) {
+	req, err := http.NewRequest("POST", "/api/billing/receipts/toggle", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleToggleBillingReceipt)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "ENABLED") {
+		t.Errorf("expected billing receipt toggled state confirmation, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleAddPublicationComment(t *testing.T) {
+	form := url.Values{}
+	form.Set("pmid", "35012345")
+	form.Set("comment", "This is an important study.")
+
+	req, err := http.NewRequest("POST", "/api/knowsitall/publication/comment", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleAddPublicationComment)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "important study") {
+		t.Errorf("expected annotation text response, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetHRVSleepCorrelation(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/wearables/hrv/sleep-correlation", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetHRVSleepCorrelation)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "<svg") {
+		t.Errorf("expected correlation chart SVG, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetSecurityLocations(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/profile/security-locations", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetSecurityLocations)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Boston, MA") {
+		t.Errorf("expected session location log rows, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleResetGutPhylumAlertThreshold(t *testing.T) {
+	req, err := http.NewRequest("POST", "/api/diagnostics/gut-diversity/phylum/alert/reset", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleResetGutPhylumAlertThreshold)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "reset to default ratio") {
+		t.Errorf("expected reset message, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetKnowsItAllParserRawJSON(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/knowsitall/upload-paper/raw-json", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetKnowsItAllParserRawJSON)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "paper_title") {
+		t.Errorf("expected raw parser json layout, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleCancelConsultationCalendarICS(t *testing.T) {
+	req, err := http.NewRequest("POST", "/api/consultations/calendar/cancel", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleCancelConsultationCalendarICS)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "invite cancellation request received") {
+		t.Errorf("expected invite cancellation response text, got %s", rr.Body.String())
+	}
+}
