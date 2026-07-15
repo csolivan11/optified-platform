@@ -548,6 +548,14 @@
                 <p class="text-[10px] text-slate-500 animate-pulse">Loading Pace of Aging rate...</p>
             </div>
             
+            <!-- Cohort Percentile Stats Indicator (Phase 318) -->
+            <div class="mt-3 p-3 rounded bg-cyan-950/20 border border-cyan-900/40"
+                 hx-get="/api/longevity/horvath-simulation/percentile"
+                 hx-trigger="load, horvathSimRun from:body"
+                 hx-swap="innerHTML">
+                <p class="text-[10px] text-slate-500 animate-pulse">Loading cohort comparative percentile...</p>
+            </div>
+            
             <div class="mt-4 border-t border-navy-900 pt-3 flex justify-between items-center mb-2">
                 <h4 class="text-xs font-semibold text-slate-400">Epigenetic Simulation Log History</h4>
                 <a href="/api/longevity/horvath-simulation/delta/export" download class="text-[10px] text-cyan-400 hover:underline">
@@ -823,7 +831,14 @@
                     <div id="food-suitability-results" class="mt-2 text-[9px] text-slate-400"></div>
                 </div>
 
-                <div id="microbiome-advice-container" class="mt-2 p-2 rounded bg-navy-955 text-[10px] text-slate-355 border border-navy-850"
+                <div class="mt-2 flex justify-between items-center">
+                    <span class="text-[10px] text-slate-400 font-semibold uppercase">Microbiome Advice Options</span>
+                    <a href="/api/diagnostics/gut-diversity/advice/print" target="_blank"
+                       class="px-1.5 py-0.5 rounded border border-navy-800 bg-navy-900 hover:bg-navy-850 text-[8px] font-semibold text-slate-300 hover:text-white transition">
+                        Print Advice
+                    </a>
+                </div>
+                <div id="microbiome-advice-container" class="p-2 rounded bg-navy-955 text-[10px] text-slate-355 border border-navy-850"
                      hx-get="/api/diagnostics/gut-diversity/advice"
                      hx-trigger="load, gutDiversityCalibrated from:body"
                      hx-swap="innerHTML">
@@ -846,9 +861,15 @@
                         <input type="number" name="bact_limit" value="45" min="20" max="80"
                                class="w-12 px-1 py-0.5 border border-navy-800 rounded bg-navy-950 text-slate-100 text-[10px] focus:outline-none focus:border-cyan-500">
                     </div>
-                    <button type="submit" class="w-full py-1 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-[9px] font-semibold transition">
-                        Configure Phyla Limits
-                    </button>
+                    <div class="flex gap-2">
+                        <button type="submit" class="flex-1 py-1 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-[9px] font-semibold transition">
+                            Configure Phyla Limits
+                        </button>
+                        <a href="/api/diagnostics/gut-diversity/phylum/pdf" target="_blank"
+                           class="px-2 py-1 rounded border border-navy-800 bg-navy-900 hover:bg-navy-850 text-[9px] font-semibold text-slate-300 hover:text-white transition text-center flex items-center justify-center">
+                            Export PDF
+                        </a>
+                    </div>
                     <div id="phyla-alert-feedback"></div>
                 </form>
 
@@ -1012,6 +1033,16 @@
                      hx-swap="innerHTML">
                     <span class="animate-pulse">Loading recovery metrics...</span>
                 </div>
+                <!-- HRV Monthly Historical Trends (Phase 330) -->
+                <div class="mt-4 pt-4 border-t border-navy-900/60">
+                    <h4 class="text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-2">Monthly HRV Autonomic Stability</h4>
+                    <div hx-get="/api/wearables/hrv/monthly-chart"
+                         hx-trigger="load, wearablesSynced from:body"
+                         hx-swap="innerHTML"
+                         class="relative h-20 w-full">
+                        <p class="text-[10px] text-slate-500 animate-pulse">Loading monthly stability chart...</p>
+                    </div>
+                </div>
             </div>
 
             <!-- Active Energy & Steps SVG Chart -->
@@ -1163,6 +1194,11 @@
                 </button>
             </form>
             <div id="workout-scheduler-feedback" class="mt-3"></div>
+            <!-- Zone 2 Workout Alert parameters checkbox (Phase 328) -->
+            <div class="mt-2 p-2 rounded bg-amber-950/20 border border-amber-900/40 text-[9px] text-amber-400">
+                <span class="font-semibold block mb-0.5">Zone 2 Aerobic Boundary Monitoring</span>
+                <span>Alarms: Triggered when heart rate deviates outside 120-140 bpm limits.</span>
+            </div>
 
             <div class="mt-4 border-t border-navy-900 pt-3">
                 <h4 class="text-xs font-semibold text-slate-400 mb-2">Upcoming Scheduled Cardio Sessions</h4>
@@ -1339,10 +1375,19 @@
                     July 23 - 11:30 AM
                 </button>
             </div>
-            <button type="submit" :disabled="!date" class="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-semibold transition">
-                Confirm Booking
-            </button>
+            <div class="flex flex-wrap gap-3 items-end">
+                <div class="flex-1 min-w-[180px]">
+                    <label for="backup_phone" class="block text-[10px] text-slate-500 uppercase mb-1">Backup Contact Phone (Optional)</label>
+                    <input type="tel" id="backup_phone" name="backup_phone" placeholder="+1 (555) 000-1122"
+                           class="w-full px-2.5 py-1.5 border border-navy-800 rounded bg-navy-950 text-slate-200 text-xs focus:outline-none">
+                </div>
+                <button type="submit" :disabled="!date" class="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-semibold transition">
+                    Confirm Booking
+                </button>
+            </div>
         </form>
+        <!-- Consult Backup Telephone feedback (Phase 339) -->
+        <div id="backup-phone-feedback" class="mt-2 text-[9px] text-slate-400"></div>
     </div>
 
     <!-- KnowsItAll Research Hub & Interactive Knowledge Graph -->

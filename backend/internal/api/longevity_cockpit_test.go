@@ -1478,3 +1478,255 @@ func TestHandleGetConsultationCalendarICS(t *testing.T) {
 		t.Errorf("expected calendar invite ics format, got %s", rr.Body.String())
 	}
 }
+
+func TestHandleSaveProfileAvatar(t *testing.T) {
+	req, err := http.NewRequest("POST", "/api/profile/avatar", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleSaveProfileAvatar)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "avatar image uploaded") {
+		t.Errorf("expected upload feedback message, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetHorvathSimulationPercentile(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/longevity/horvath-simulation/percentile", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetHorvathSimulationPercentile)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Cohort Percentile:") {
+		t.Errorf("expected percentile data, got %s", rr.Body.String())
+	}
+}
+
+func TestHandlePrintGutDiversityAdvice(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/diagnostics/gut-diversity/advice/print", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandlePrintGutDiversityAdvice)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if rr.Header().Get("Content-Type") != "application/pdf" {
+		t.Errorf("expected PDF content-type, got %s", rr.Header().Get("Content-Type"))
+	}
+}
+
+func TestHandleSendBillingInvoiceEmail(t *testing.T) {
+	req, err := http.NewRequest("POST", "/api/billing/invoices/email?id=OPT-8976", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleSendBillingInvoiceEmail)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "OPT-8976 dispatched") {
+		t.Errorf("expected dispatch confirmation, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleUpdatePublicationTags(t *testing.T) {
+	form := url.Values{}
+	form.Set("pmid", "35012345")
+	form.Set("new_tags", "Longevity, Fasting")
+
+	req, err := http.NewRequest("POST", "/api/knowsitall/publication/tags", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleUpdatePublicationTags)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Fasting") {
+		t.Errorf("expected updated tag validation, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetHRVMonthlyChart(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/wearables/hrv/monthly-chart", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetHRVMonthlyChart)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "<svg") {
+		t.Errorf("expected monthly chart SVG, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleUpdateSMSMFAPhone(t *testing.T) {
+	form := url.Values{}
+	form.Set("mfa_phone", "+15551234567")
+
+	req, err := http.NewRequest("POST", "/api/profile/mfa/sms", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleUpdateSMSMFAPhone)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "+15551234567") {
+		t.Errorf("expected phone validation, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleExportGutPhylaPDF(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/diagnostics/gut-diversity/phylum/pdf", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleExportGutPhylaPDF)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if rr.Header().Get("Content-Type") != "application/pdf" {
+		t.Errorf("expected PDF content-type, got %s", rr.Header().Get("Content-Type"))
+	}
+}
+
+func TestHandleGetKnowsItAllParserErrors(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/knowsitall/upload-paper/errors", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetKnowsItAllParserErrors)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "PASSED") {
+		t.Errorf("expected diagnostic check logs list, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleRegisterConsultationBackupPhone(t *testing.T) {
+	form := url.Values{}
+	form.Set("backup_phone", "+15559876543")
+
+	req, err := http.NewRequest("POST", "/api/consultations/backup-phone", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleRegisterConsultationBackupPhone)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "+15559876543") {
+		t.Errorf("expected backup phone register alert, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleListClientsSorting(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/clients?sort=date", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "coach-id-123", "coach")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleListClients)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+}

@@ -437,8 +437,13 @@ func HandleGetPublicationsList(w http.ResponseWriter, r *http.Request) {
 				<span class="text-[10px] text-cyan-400 block font-semibold">%s [PMID: %s]</span>
 				<span class="text-[9px] text-slate-550 block">%s</span>
 				<span class="inline-block mt-1 px-1 py-0.5 rounded bg-cyan-950/40 text-cyan-400 font-mono text-[8px]">%s</span>
+				<form hx-post="/api/knowsitall/publication/tags" hx-swap="outerHTML" class="mt-1 flex gap-1 items-center">
+					<input type="hidden" name="pmid" value="%s">
+					<input type="text" name="new_tags" placeholder="Update tags..." class="px-1 py-0.5 border border-navy-800 rounded bg-navy-950 text-slate-200 text-[8px] focus:outline-none">
+					<button type="submit" class="px-1.5 py-0.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-[8px] font-semibold transition">Save</button>
+				</form>
 			</div>`,
-			pub.Title, pub.PMID, pub.Citation, pub.Tags,
+			pub.Title, pub.PMID, pub.Citation, pub.Tags, pub.PMID,
 		)
 	}
 	if html == "" {
