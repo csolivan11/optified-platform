@@ -685,3 +685,73 @@ func TestHandleGetGutPhylumBreakdown(t *testing.T) {
 		t.Errorf("expected phylum breakdown stats content, got %s", rr.Body.String())
 	}
 }
+
+func TestHandleExportHorvathSimulationDelta(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/longevity/horvath-simulation/delta/export", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleExportHorvathSimulationDelta)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "EPIGENETIC HORVATH SIMULATION DELTA REPORT") {
+		t.Errorf("expected exported text content, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleCGMTIRAlertSoundConfig(t *testing.T) {
+	form := url.Values{}
+	form.Set("sound_profile", "melodic")
+
+	req, err := http.NewRequest("POST", "/api/wearables/cgm-tir/alert/sound", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleCGMTIRAlertSoundConfig)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Alert sound profile set to") {
+		t.Errorf("expected confirmation message, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetGutDiversityAlerts(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/diagnostics/gut-diversity/alerts", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetGutDiversityAlerts)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Clinical Status Indicator") {
+		t.Errorf("expected clinical alerts stats content, got %s", rr.Body.String())
+	}
+}

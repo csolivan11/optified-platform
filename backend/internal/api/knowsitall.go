@@ -335,6 +335,12 @@ func HandleUploadPaperPDF(w http.ResponseWriter, r *http.Request) {
 		slog.Int("citations", citationCount),
 	)
 
+	journalName := r.FormValue("journal_name")
+	if len(strings.TrimSpace(journalName)) == 0 {
+		http.Error(w, "Journal name is a mandatory metadata parameter", http.StatusBadRequest)
+		return
+	}
+
 	// Mock parsing result (Phase 65 uploader)
 	parsedTitle := "Carbohydrate Intake Ratios and Glycogen Synthesis during High-Intensity Workouts"
 	parsedAbstract := "This paper evaluates the glycogen replenishment rates using 1.2 g/kg/h carbohydrate ratios in Swiss elite endurance athletes, showing a 30% increase in performance markers."
@@ -357,11 +363,12 @@ func HandleUploadPaperPDF(w http.ResponseWriter, r *http.Request) {
 		<div class="p-3 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] mt-2">
 			<span class="font-bold block mb-1">Paper Parsed and Ingested successfully:</span>
 			Title: <span class="text-slate-200">%s</span><br>
+			Journal: <span class="text-slate-100 font-semibold">%s</span><br>
 			Tags: <span class="px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 font-mono text-[9px]">%s</span><br>
 			Citations: <span class="text-slate-100 font-mono font-bold">%d</span><br>
 			Abstract: <span class="text-slate-355 italic block mt-1">%s</span>
 		</div>
-	`, parsedTitle, tags, citationCount, parsedAbstract)))
+	`, parsedTitle, journalName, tags, citationCount, parsedAbstract)))
 }
 
 // HandleGetPublicationsList returns indexed academic papers, supporting focus tag filtering

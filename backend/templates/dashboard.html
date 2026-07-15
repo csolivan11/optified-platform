@@ -524,9 +524,13 @@
                 <p class="text-[10px] text-slate-500">Loading bio age trajectory line chart...</p>
             </div>
             
-            <div class="mt-4 border-t border-navy-900 pt-3">
-                <h4 class="text-xs font-semibold text-slate-400 mb-2">Epigenetic Simulation Log History</h4>
-                <div hx-get="/api/longevity/horvath-simulation/history" hx-trigger="load, horvathSimRun from:body" class="overflow-x-auto text-[10px] text-slate-350">
+            <div class="mt-4 border-t border-navy-900 pt-3 flex justify-between items-center mb-2">
+                <h4 class="text-xs font-semibold text-slate-400">Epigenetic Simulation Log History</h4>
+                <a href="/api/longevity/horvath-simulation/delta/export" download class="text-[10px] text-cyan-400 hover:underline">
+                    Export Delta Report
+                </a>
+            </div>
+            <div hx-get="/api/longevity/horvath-simulation/history" hx-trigger="load, horvathSimRun from:body" class="overflow-x-auto text-[10px] text-slate-350">
                     <p class="animate-pulse">Loading simulation logs...</p>
                 </div>
             </div>
@@ -601,6 +605,25 @@
                     </button>
                 </form>
                 <div id="cgm-alert-feedback" class="mt-2"></div>
+
+            <div class="mt-3 border-t border-navy-900/60 pt-3">
+                <h4 class="text-xs font-semibold text-slate-400 mb-2">Configure Custom Alert Sound Profiles</h4>
+                <form hx-post="/api/wearables/cgm-tir/alert/sound"
+                      hx-target="#cgm-sound-feedback"
+                      hx-swap="innerHTML"
+                      class="flex items-center gap-3">
+                    <label class="text-[10px] text-slate-455 uppercase">Alert Sound profile:</label>
+                    <select name="sound_profile" class="px-2 py-1 border border-navy-800 rounded bg-navy-900 text-slate-200 text-xs focus:outline-none focus:border-emerald-500 transition">
+                        <option value="melodic">Melodic Chime (Soft)</option>
+                        <option value="urgent">Urgent Alarm (High Pitch)</option>
+                        <option value="discreet">Vibrate Mode (Discreet)</option>
+                    </select>
+                    <button type="submit" class="px-3 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-semibold transition ml-auto">
+                        Save Sound Settings
+                    </button>
+                </form>
+                <div id="cgm-sound-feedback" class="mt-2"></div>
+            </div>
 
             <div class="mt-4 border-t border-navy-900 pt-3">
                 <h4 class="text-xs font-semibold text-slate-400 mb-2">Tag Glycemic Meal Event Reading</h4>
@@ -767,6 +790,12 @@
                      hx-trigger="load, gutDiversityCalibrated from:body"
                      hx-swap="innerHTML">
                     <span class="animate-pulse">Loading gut phylum breakdown...</span>
+                </div>
+                <div class="mt-2 p-2 rounded bg-navy-950 text-[10px] text-slate-355 border border-navy-850 flex justify-between items-center"
+                     hx-get="/api/diagnostics/gut-diversity/alerts"
+                     hx-trigger="load, gutDiversityCalibrated from:body"
+                     hx-swap="innerHTML">
+                    <span class="animate-pulse">Loading clinical microbiome alerts...</span>
                 </div>
             </div>
         </div>
@@ -1044,6 +1073,11 @@
                         <option value="PST">PST</option>
                         <option value="UTC">UTC</option>
                     </select>
+                </div>
+                <div class="flex-1 min-w-[100px]">
+                    <label class="block text-[10px] text-slate-500 uppercase mb-1">Duration (mins)</label>
+                    <input type="number" name="duration" value="45" min="10" max="240" required
+                           class="w-full px-2 py-1.5 border border-navy-800 rounded bg-navy-950 text-slate-200 text-xs focus:outline-none">
                 </div>
                 <div class="w-full mt-2">
                     <label class="block text-[10px] text-slate-500 uppercase mb-1">Session Planning Notes</label>

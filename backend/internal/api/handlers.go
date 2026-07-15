@@ -1809,12 +1809,16 @@ func HandleScheduleWorkout(w http.ResponseWriter, r *http.Request) {
 	scheduledDate := r.FormValue("scheduled_date")
 	recurrence := r.FormValue("recurrence")
 	timezone := r.FormValue("timezone")
+	duration := r.FormValue("duration")
 	notes := r.FormValue("notes")
 	if recurrence == "" {
 		recurrence = "once"
 	}
 	if timezone == "" {
 		timezone = "UTC"
+	}
+	if duration == "" {
+		duration = "45"
 	}
 
 	if workoutType == "" || scheduledDate == "" {
@@ -1827,7 +1831,7 @@ func HandleScheduleWorkout(w http.ResponseWriter, r *http.Request) {
 	resType := "fitness_protocol"
 	ip := r.RemoteAddr
 	ua := r.UserAgent()
-	meta := fmt.Sprintf(`{"workout_type": %q, "scheduled_date": %q, "recurrence": %q, "timezone": %q, "notes": %q}`, workoutType, scheduledDate, recurrence, timezone, notes)
+	meta := fmt.Sprintf(`{"workout_type": %q, "scheduled_date": %q, "recurrence": %q, "timezone": %q, "duration": %q, "notes": %q}`, workoutType, scheduledDate, recurrence, timezone, duration, notes)
 
 	auditLog := repository.AuditLog{
 		ActorID:        clientID,
@@ -1845,10 +1849,10 @@ func HandleScheduleWorkout(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write([]byte(fmt.Sprintf(`
 		<div class="p-2.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px]">
-			Workout scheduled: <b class="text-slate-100">%s</b> on %s %s (Pattern: <span class="uppercase font-mono font-semibold">%s</span>).<br/>
-			<span class="text-slate-350 italic mt-1 block">Notes: %s</span>
+			Workout scheduled: <b class="text-slate-100">%s</b> (%s mins) on %s %s (Pattern: <span class="uppercase font-mono font-semibold">%s</span>).<br/>
+			<span class="text-slate-355 italic mt-1 block">Notes: %s</span>
 		</div>
-	`, workoutType, scheduledDate, timezone, recurrence, notes)))
+	`, workoutType, duration, scheduledDate, timezone, recurrence, notes)))
 }
 
 // HandleGutDiversityConfig updates target Shannon diversity index parameters
@@ -2771,5 +2775,143 @@ func HandleGetGutPhylumBreakdown(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`
 		<span>Phylum Ratio: <b class="text-slate-200">F/B Ratio: 0.84</b> (Optimal Anti-Inflammatory Baseline)</span>
 	`))
+}
+
+// HandleExportHorvathSimulationDelta exports the biological offset delta comparison as text
+func HandleExportHorvathSimulationDelta(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	chronAge := 45.0
+	bioAge := 35.1
+
+	if db.Pool != nil {
+		var metaStr string
+		err := db.Pool.QueryRow(ctx,
+			`SELECT metadata FROM public.audit_logs 
+			 WHERE actor_id = $1 AND action = 'run_horvath_simulation' 
+			 ORDER BY created_at DESC LIMIT 1`,
+			clientID,
+		).Scan(&metaStr)
+		if err == nil {
+			var meta map[string]interface{}
+			if err := json.Unmarshal([]byte(metaStr), &meta); err == nil {
+				if c, ok := meta["chronological_age"].(float64); ok {
+					chronAge = c
+				}
+				if b, ok := meta["predicted_bio_age"].(float64); ok {
+					bioAge = b
+				}
+			}
+		}
+	}
+
+	delta := bioAge - chronAge
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set("Content-Disposition", "attachment; filename=\"horvath_simulation_delta_report.txt\"")
+
+	report := fmt.Sprintf("─────────────────────────────────────────────────────────────────────────────\n"+
+		"                EPIGENETIC HORVATH SIMULATION DELTA REPORT\n"+
+		"─────────────────────────────────────────────────────────────────────────────\n\n"+
+		"Client ID: %s\n"+
+		"Chronological Age: %.1f years\n"+
+		"Predicted Biological Age: %.1f years\n"+
+		"Biological Offset Delta: %.1f years\n\n"+
+		"Conclusion: Biological age offset is %.1f years relative to chronological baseline.\n",
+		clientID, chronAge, bioAge, delta, delta)
+	w.Write([]byte(report))
+}
+
+// HandleCGMTIRAlertSoundConfig configures custom sound profile rules
+func HandleCGMTIRAlertSoundConfig(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	clientRole, _ := ctx.Value(UserRoleKey).(string)
+
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	soundProfile := r.FormValue("sound_profile")
+	if soundProfile == "" {
+		http.Error(w, "Missing sound_profile parameter", http.StatusBadRequest)
+		return
+	}
+
+	action := "configured_cgm_alert_sound"
+	resType := "wearables_sound_configuration"
+	ip := r.RemoteAddr
+	ua := r.UserAgent()
+	meta := fmt.Sprintf(`{"sound_profile": %q}`, soundProfile)
+
+	auditLog := repository.AuditLog{
+		ActorID:        clientID,
+		ActorRole:      clientRole,
+		Action:         action,
+		ResourceType:   &resType,
+		TargetClientID: &clientID,
+		IPAddress:      &ip,
+		UserAgent:      &ua,
+		Metadata:       &meta,
+	}
+	auditRepo := &repository.AuditLogRepo{}
+	_ = auditRepo.Create(ctx, auditLog)
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(fmt.Sprintf(`
+		<div class="p-2 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] mt-2">
+			Alert sound profile set to: <b class="text-slate-100 font-bold uppercase font-mono">%s</b>.
+		</div>
+	`, soundProfile)))
+}
+
+// HandleGetGutDiversityAlerts returns clinical severity alert indicators based on Shannon score
+func HandleGetGutDiversityAlerts(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	score := 7.8
+	if db.Pool != nil {
+		var metaStr string
+		err := db.Pool.QueryRow(ctx,
+			`SELECT metadata FROM public.audit_logs 
+			 WHERE target_client_id = $1 AND action = 'adjusted_gut_diversity_target' 
+			 ORDER BY created_at DESC LIMIT 1`,
+			clientID,
+		).Scan(&metaStr)
+		if err == nil {
+			var meta map[string]interface{}
+			if err := json.Unmarshal([]byte(metaStr), &meta); err == nil {
+				if s, ok := meta["target_diversity"].(float64); ok {
+					score = s
+				}
+			}
+		}
+	}
+
+	severity := "Optimal Eubiosis"
+	color := "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+	if score < 5.0 {
+		severity = "Critical Dysbiosis"
+		color = "text-rose-455 bg-rose-500/10 border-rose-500/20"
+	} else if score < 6.0 {
+		severity = "Moderate Dysbiosis"
+		color = "text-amber-500 bg-amber-500/10 border-amber-500/20"
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(fmt.Sprintf(`
+		<span>Clinical Status Indicator:</span>
+		<span class="px-1.5 py-0.5 rounded border text-[8px] font-bold uppercase %s">%s</span>
+	`, color, severity)))
 }
 
