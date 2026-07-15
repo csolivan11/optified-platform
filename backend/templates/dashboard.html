@@ -1,5 +1,21 @@
 {{define "content"}}
-<div class="space-y-8 animate-fade-in">
+<div class="space-y-8 animate-fade-in"
+     hx-headers='{"X-CSRF-Token": "static_session_csrf_token_value_xyz"}'>
+     
+    <!-- Investor Marketing Demo Sandbox Mode Banner (Phase 243) -->
+    <div class="p-3 rounded-lg bg-cyan-950/30 border border-cyan-800/40 flex justify-between items-center text-xs text-cyan-400">
+        <div class="flex items-center gap-2">
+            <span class="h-2 w-2 rounded-full bg-cyan-400 animate-pulse"></span>
+            <span>Investor Deck Sandbox Simulator Mode Active</span>
+        </div>
+        <button hx-post="/api/longevity/demo/toggle" 
+                hx-target="#normalized-reports-card" 
+                hx-swap="outerHTML"
+                class="px-2.5 py-0.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-[10px] font-semibold transition">
+            Toggle Demo Telemetry
+        </button>
+    </div>
+
     <!-- Hero Banner -->
     <div class="relative overflow-hidden rounded-2xl border border-navy-800 bg-gradient-to-r from-navy-950 via-navy-900 to-navy-950 p-8 shadow-xl">
         <div class="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-emerald-500/10 blur-3xl"></div>

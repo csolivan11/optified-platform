@@ -1,5 +1,6 @@
 {{define "content"}}
-<div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+<div class="grid grid-cols-1 gap-8 lg:grid-cols-3"
+     hx-headers='{"X-CSRF-Token": "static_session_csrf_token_value_xyz"}'>
     <!-- Client Pipeline Panel -->
     <div class="lg:col-span-1 rounded-xl border border-navy-850 bg-navy-950 p-6 flex flex-col h-[75vh]">
         <h2 class="text-lg font-bold text-slate-100 mb-2">Assigned Client Pipeline</h2>

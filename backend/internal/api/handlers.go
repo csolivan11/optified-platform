@@ -295,7 +295,8 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 			Value:    "local-mock-session-token", // In mock, token check is bypassed
 			Path:     "/",
 			HttpOnly: true,
-			Secure:   false,
+			Secure:   true,
+			SameSite: http.SameSiteStrictMode,
 			Expires:  time.Now().Add(24 * time.Hour),
 		}
 		http.SetCookie(w, cookie)
@@ -366,14 +367,13 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// ─── Set HTTP-only Cookie & Redirect ──────────────────────────
-	isProd := os.Getenv("NODE_ENV") == "production"
 	cookie := &http.Cookie{
 		Name:     "sb-access-token",
 		Value:    authResp.AccessToken,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   isProd, // SSL required in production
-		SameSite: http.SameSiteLaxMode,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
 		Expires:  time.Now().Add(24 * time.Hour),
 	}
 	http.SetCookie(w, cookie)
@@ -3128,5 +3128,83 @@ func HandleGetClinicalNotesSpotlight(w http.ResponseWriter, r *http.Request) {
 			</div>
 		</div>
 	`, notes)))
+}
+
+// HandleDemoMockTelemetryToggle toggles the simulated investor mode state
+func HandleDemoMockTelemetryToggle(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(`
+		<div class="rounded-xl border border-navy-850 bg-navy-950 p-6 shadow-md" id="normalized-reports-card">
+			<div class="flex items-center justify-between mb-4 border-b border-navy-900 pb-3">
+				<div>
+					<h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+						<span class="h-2.5 w-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
+						Demo/Investor Mode Normalized Reports
+					</h2>
+					<p class="text-xs text-slate-455 mt-0.5">Mock investor telemetry data sandbox enabled.</p>
+				</div>
+				<span class="text-[10px] px-2 py-0.5 rounded border border-cyan-800 bg-cyan-955 text-cyan-400 uppercase tracking-wider font-semibold">Demo Sandbox</span>
+			</div>
+			<div class="space-y-2">
+				<div class="p-2.5 rounded bg-slate-900 border border-navy-850 flex justify-between items-center text-xs">
+					<div>
+						<span class="text-slate-200 block font-semibold">Genova Mock GI Effects</span>
+						<span class="text-slate-500 text-[10px] block">Shannon Diversity Index: 9.2 (Baseline: >6.0)</span>
+					</div>
+					<span class="px-2 py-0.5 rounded bg-emerald-950/40 text-emerald-400 border border-emerald-900/30 text-[9px] uppercase font-bold">Optimal</span>
+				</div>
+				<div class="p-2.5 rounded bg-slate-900 border border-navy-850 flex justify-between items-center text-xs">
+					<div>
+						<span class="text-slate-200 block font-semibold">Quest Mock Cardiovascular Profile</span>
+						<span class="text-slate-500 text-[10px] block">Apolipoprotein B (apoB): 45 mg/dL (Target: <65 mg/dL)</span>
+					</div>
+					<span class="px-2 py-0.5 rounded bg-emerald-950/40 text-emerald-400 border border-emerald-900/30 text-[9px] uppercase font-bold">Optimal</span>
+				</div>
+			</div>
+		</div>
+	`))
+}
+
+// HandleGetSessionExpirationStatus returns session expiration status indicators
+func HandleGetSessionExpirationStatus(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Write([]byte(`{"session_active": true, "seconds_remaining": 86400, "role": "client"}`))
+}
+
+// HandleRevokeSession revokes simulated user session token active state
+func HandleRevokeSession(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	cookie := &http.Cookie{
+		Name:     "sb-access-token",
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		Expires:  time.Now().Add(-1 * time.Hour),
+	}
+	http.SetCookie(w, cookie)
+
+	w.Header().Set("HX-Redirect", "/login")
+	w.WriteHeader(http.StatusOK)
 }
 

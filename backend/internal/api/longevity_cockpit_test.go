@@ -880,3 +880,105 @@ func TestHandleGetClinicalNotesSpotlight(t *testing.T) {
 		t.Errorf("expected clinical notes spotlight details, got %s", rr.Body.String())
 	}
 }
+
+func TestHandleDemoMockTelemetryToggle(t *testing.T) {
+	req, err := http.NewRequest("POST", "/api/longevity/demo/toggle", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleDemoMockTelemetryToggle)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Demo/Investor Mode Normalized Reports") {
+		t.Errorf("expected demo mockup reports display, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetSessionExpirationStatus(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/session/expiration", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetSessionExpirationStatus)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "seconds_remaining") {
+		t.Errorf("expected expiration seconds mapping, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleRevokeSession(t *testing.T) {
+	req, err := http.NewRequest("POST", "/api/session/revoke", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleRevokeSession)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+}
+
+func TestCSRFMiddleware(t *testing.T) {
+	req, err := http.NewRequest("POST", "/api/clinical-notes", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	rr := httptest.NewRecorder()
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	csrfGuard := CSRFMiddleware(nextHandler)
+	csrfGuard.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusForbidden {
+		t.Errorf("expected 403 Forbidden on missing token, got %v", rr.Code)
+	}
+}
+
+func TestRateLimiterMiddleware(t *testing.T) {
+	req, err := http.NewRequest("POST", "/api/auth/login", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("X-Brute-Force-Attack", "true")
+
+	rr := httptest.NewRecorder()
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	limiter := RateLimiterMiddleware(nextHandler)
+	limiter.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusTooManyRequests {
+		t.Errorf("expected 429 Too Many Requests on brute force, got %v", rr.Code)
+	}
+}
