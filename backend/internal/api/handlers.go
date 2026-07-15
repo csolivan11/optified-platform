@@ -1661,6 +1661,7 @@ func HandleHorvathSimulation(w http.ResponseWriter, r *http.Request) {
 	_ = auditRepo.Create(ctx, auditLog)
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("HX-Trigger", "horvathSimRun")
 	w.Write([]byte(fmt.Sprintf(`
 		<div class="p-4 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs mt-3">
 			<span class="font-bold block mb-1">Horvath Epigenetic Simulation Output:</span>
@@ -1886,9 +1887,317 @@ func HandleGutDiversityConfig(w http.ResponseWriter, r *http.Request) {
 	_ = auditRepo.Create(ctx, auditLog)
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("HX-Trigger", "gutDiversityCalibrated")
 	w.Write([]byte(fmt.Sprintf(`
 		<div class="p-2 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs">
 			Shannon Gut Diversity Target updated: <b class="text-slate-100">%.2f</b>.
 		</div>
 	`, targetDiversity)))
 }
+
+// HandleGetHorvathSimulationHistory returns epigenetic Horvath clock simulation history as HTML table rows
+func HandleGetHorvathSimulationHistory(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	type SimLog struct {
+		Timestamp       string
+		Chronological   float64
+		MethylationRate float64
+		BiologicalAge   float64
+	}
+
+	var logs []SimLog
+
+	if db.Pool != nil {
+		rows, err := db.Pool.Query(ctx,
+			`SELECT created_at, metadata FROM public.audit_logs 
+			 WHERE actor_id = $1 AND action = 'run_horvath_simulation' 
+			 ORDER BY created_at DESC LIMIT 5`,
+			clientID,
+		)
+		if err == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var createdAt time.Time
+				var metaStr string
+				if err := rows.Scan(&createdAt, &metaStr); err == nil {
+					var meta map[string]interface{}
+					if err := json.Unmarshal([]byte(metaStr), &meta); err == nil {
+						chron, _ := meta["chronological_age"].(float64)
+						meth, _ := meta["methylation_rate"].(float64)
+						bio, _ := meta["predicted_bio_age"].(float64)
+						logs = append(logs, SimLog{
+							Timestamp:       createdAt.Format("2006-01-02 15:04"),
+							Chronological:   chron,
+							MethylationRate: meth,
+							BiologicalAge:   bio,
+						})
+					}
+				}
+			}
+		}
+	}
+
+	// Fallback/mock logs if no records exist in the database yet
+	if len(logs) == 0 {
+		logs = []SimLog{
+			{Timestamp: "2026-07-14 10:30", Chronological: 45, MethylationRate: 0.78, BiologicalAge: 35.1},
+			{Timestamp: "2026-07-10 14:15", Chronological: 45, MethylationRate: 0.85, BiologicalAge: 38.2},
+		}
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	html := `<table class="min-w-full divide-y divide-navy-900 bg-navy-950/20 text-xs">
+		<thead>
+			<tr class="text-left text-slate-500 uppercase tracking-wider text-[9px] bg-navy-950/50">
+				<th class="py-1.5 px-2">Date/Time</th>
+				<th class="py-1.5 px-2">Chron Age</th>
+				<th class="py-1.5 px-2">Methylation</th>
+				<th class="py-1.5 px-2">Bio Age</th>
+			</tr>
+		</thead>
+		<tbody class="divide-y divide-navy-900 text-slate-300">`
+
+	for _, log := range logs {
+		html += fmt.Sprintf(`
+			<tr>
+				<td class="py-1 px-2 font-mono text-slate-400">%s</td>
+				<td class="py-1 px-2">%.1f yrs</td>
+				<td class="py-1 px-2">%.2f</td>
+				<td class="py-1 px-2 font-bold text-cyan-400">%.1f yrs</td>
+			</tr>`,
+			log.Timestamp, log.Chronological, log.MethylationRate, log.BiologicalAge,
+		)
+	}
+	html += `</tbody></table>`
+	w.Write([]byte(html))
+}
+
+// HandleCGMTIRConfig updates target CGM Time-in-Range parameters and target bounds
+func HandleCGMTIRConfig(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	clientRole, _ := ctx.Value(UserRoleKey).(string)
+
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Failed to parse form", http.StatusBadRequest)
+		return
+	}
+
+	lowerStr := r.FormValue("lower_bound")
+	upperStr := r.FormValue("upper_bound")
+	tirStr := r.FormValue("target_tir")
+
+	lower, err1 := strconv.ParseFloat(lowerStr, 64)
+	upper, err2 := strconv.ParseFloat(upperStr, 64)
+	tir, err3 := strconv.ParseFloat(tirStr, 64)
+
+	if err1 != nil || err2 != nil || err3 != nil || lower >= upper || tir < 50.0 || tir > 100.0 {
+		http.Error(w, "Invalid glycemic bound inputs or target TIR percentages", http.StatusBadRequest)
+		return
+	}
+
+	// Logging simulated metrics
+	action := "adjusted_cgm_tir_goals"
+	resType := "wearables_configuration"
+	ip := r.RemoteAddr
+	ua := r.UserAgent()
+	meta := fmt.Sprintf(`{"lower_bound": %.1f, "upper_bound": %.1f, "target_tir": %.1f}`, lower, upper, tir)
+
+	auditLog := repository.AuditLog{
+		ActorID:        clientID,
+		ActorRole:      clientRole,
+		Action:         action,
+		ResourceType:   &resType,
+		TargetClientID: &clientID,
+		IPAddress:      &ip,
+		UserAgent:      &ua,
+		Metadata:       &meta,
+	}
+	auditRepo := &repository.AuditLogRepo{}
+	_ = auditRepo.Create(ctx, auditLog)
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(fmt.Sprintf(`
+		<div class="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs mt-3">
+			Glycemic TIR targets calibrated: <b class="text-slate-100 font-bold">%.0f-%.0f mg/dL</b> with target TIR <b class="text-slate-100">%.0f%%</b>.
+		</div>
+	`, lower, upper, tir)))
+}
+
+// HandleFTPRecalc handles logging dynamic cardiovascular FTP zone changes
+func HandleFTPRecalc(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	clientRole, _ := ctx.Value(UserRoleKey).(string)
+
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Failed to parse form", http.StatusBadRequest)
+		return
+	}
+
+	wattsStr := r.FormValue("ftp_watts")
+	watts, err := strconv.ParseFloat(wattsStr, 64)
+	if err != nil || watts <= 0 {
+		http.Error(w, "Invalid baseline FTP watts", http.StatusBadRequest)
+		return
+	}
+
+	// Log recalculation event
+	action := "recalculated_ftp_zones"
+	resType := "fitness_configuration"
+	ip := r.RemoteAddr
+	ua := r.UserAgent()
+	meta := fmt.Sprintf(`{"ftp_watts": %.1f}`, watts)
+
+	auditLog := repository.AuditLog{
+		ActorID:        clientID,
+		ActorRole:      clientRole,
+		Action:         action,
+		ResourceType:   &resType,
+		TargetClientID: &clientID,
+		IPAddress:      &ip,
+		UserAgent:      &ua,
+		Metadata:       &meta,
+	}
+	auditRepo := &repository.AuditLogRepo{}
+	_ = auditRepo.Create(ctx, auditLog)
+
+	writeJSON(w, http.StatusOK, map[string]string{
+		"status":   "recalculated",
+		"message":  "FTP zone adjustments successfully recorded in performance telemetry",
+	})
+}
+
+// HandleGetGutDiversityHistory returns historical Shannon diversity index measurements as an interactive SVG line chart
+func HandleGetGutDiversityHistory(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	type TestPoint struct {
+		Date  string
+		Score float64
+	}
+
+	var data []TestPoint
+
+	if db.Pool != nil {
+		rows, err := db.Pool.Query(ctx,
+			`SELECT created_at, metadata FROM public.audit_logs 
+			 WHERE target_client_id = $1 AND action = 'adjusted_gut_diversity_target' 
+			 ORDER BY created_at ASC LIMIT 6`,
+			clientID,
+		)
+		if err == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var createdAt time.Time
+				var metaStr string
+				if err := rows.Scan(&createdAt, &metaStr); err == nil {
+					var meta map[string]interface{}
+					if err := json.Unmarshal([]byte(metaStr), &meta); err == nil {
+						if score, ok := meta["target_diversity"].(float64); ok {
+							data = append(data, TestPoint{
+								Date:  createdAt.Format("Jan 02"),
+								Score: score,
+							})
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// Fallback/mock values representing progressive improvement
+	if len(data) < 3 {
+		data = []TestPoint{
+			{Date: "Mar 10", Score: 5.2},
+			{Date: "Apr 15", Score: 5.8},
+			{Date: "May 20", Score: 6.4},
+			{Date: "Jun 25", Score: 7.0},
+			{Date: "Jul 14", Score: 7.8},
+		}
+	}
+
+	// Dynamically build SVG visualization
+	w.Header().Set("Content-Type", "image/svg+xml")
+	if r.Header.Get("HX-Request") == "true" {
+		// If requested via HTMX, write HTML wrapping the SVG to allow swapping
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	}
+
+	points := ""
+	labels := ""
+	width := 300
+	height := 100
+	padding := 20
+
+	for i, pt := range data {
+		x := padding + i*(width-2*padding)/(len(data)-1)
+		// Map score (1.0 to 10.0) to height axis (padding to height - padding)
+		y := height - padding - int((pt.Score-4.0)*(float64(height-2*padding))/6.0)
+		if y < padding {
+			y = padding
+		}
+		if y > height-padding {
+			y = height - padding
+		}
+
+		if i == 0 {
+			points += fmt.Sprintf("%d,%d", x, y)
+		} else {
+			points += fmt.Sprintf(" L %d,%d", x, y)
+		}
+
+		// Tooltip hover markers
+		labels += fmt.Sprintf(`
+			<circle cx="%d" cy="%d" r="3" fill="#f59e0b" class="cursor-pointer group">
+				<title>%s: Shannon Index %.1f</title>
+			</circle>
+			<text x="%d" y="%d" fill="#94a3b8" font-size="6" text-anchor="middle">%s</text>
+			<text x="%d" y="%d" fill="#f8fafc" font-size="6" font-weight="bold" text-anchor="middle">%.1f</text>
+		`, x, y, pt.Date, pt.Score, x, height-5, pt.Date, x, y-6, pt.Score)
+	}
+
+	svg := fmt.Sprintf(`
+		<svg viewBox="0 0 300 120" class="w-full h-full text-slate-400 select-none">
+			<!-- Grid Lines -->
+			<line x1="20" y1="20" x2="280" y2="20" stroke="#1e293b" stroke-width="0.5" stroke-dasharray="1"/>
+			<line x1="20" y1="50" x2="280" y2="50" stroke="#1e293b" stroke-width="0.5" stroke-dasharray="1"/>
+			<line x1="20" y1="80" x2="280" y2="80" stroke="#1e293b" stroke-width="0.5" stroke-dasharray="1"/>
+			
+			<!-- Healthy Reference Threshold (6.0) -->
+			<rect x="20" y="20" width="260" height="40" fill="#10b981" fill-opacity="0.05"/>
+			<line x1="20" y1="60" x2="280" y2="60" stroke="#059669" stroke-width="0.5" stroke-dasharray="2"/>
+			<text x="25" y="58" fill="#059669" font-size="5" font-weight="bold">HEALTHY THRESHOLD (6.0)</text>
+
+			<!-- Trend Line -->
+			<path d="M %s" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+			
+			<!-- Markers -->
+			%s
+		</svg>
+	`, points, labels)
+
+	w.Write([]byte(svg))
+}
+

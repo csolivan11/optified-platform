@@ -270,7 +270,20 @@ func HandleUploadPaperPDF(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	slog.Info("Academic paper uploaded for analysis", slog.String("filename", header.Filename))
+	// Enforce metadata validation (Phase 166)
+	if !strings.HasSuffix(strings.ToLower(header.Filename), ".pdf") {
+		http.Error(w, "Invalid file format: only PDF files are accepted", http.StatusBadRequest)
+		return
+	}
+
+	impactFactorStr := r.FormValue("impact_factor")
+	impactFactor, err := strconv.ParseFloat(impactFactorStr, 64)
+	if err != nil || impactFactor < 0.0 || impactFactor > 150.0 {
+		http.Error(w, "Invalid journal impact factor value", http.StatusBadRequest)
+		return
+	}
+
+	slog.Info("Academic paper uploaded for analysis", slog.String("filename", header.Filename), slog.Float64("impact_factor", impactFactor))
 
 	// Mock parsing result (Phase 65 uploader)
 	parsedTitle := "Carbohydrate Intake Ratios and Glycogen Synthesis during High-Intensity Workouts"
@@ -289,10 +302,12 @@ func HandleUploadPaperPDF(w http.ResponseWriter, r *http.Request) {
 		slog.Error("failed to register uploaded paper", "error", dbErr)
 	}
 
-	writeJSON(w, http.StatusOK, map[string]string{
-		"status":   "parsed",
-		"title":    parsedTitle,
-		"abstract": parsedAbstract,
-		"message":  "Academic paper parsed and loaded into KnowsItAll knowledge corpus",
-	})
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(fmt.Sprintf(`
+		<div class="p-3 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] mt-2">
+			<span class="font-bold block mb-1">Paper Parsed and Ingested successfully:</span>
+			Title: <span class="text-slate-200">%s</span><br>
+			Abstract: <span class="text-slate-350 italic block mt-1">%s</span>
+		</div>
+	`, parsedTitle, parsedAbstract)))
 }

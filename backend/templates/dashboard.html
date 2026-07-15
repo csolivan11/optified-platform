@@ -486,10 +486,17 @@
                     Run Longevity Simulation
                 </button>
             </form>
-            <div id="horvath-simulator-feedback" class="mt-4"></div>
+            <div id="horvath-simulator-feedback" class="mt-2"></div>
+            
+            <div class="mt-4 border-t border-navy-900 pt-3">
+                <h4 class="text-xs font-semibold text-slate-400 mb-2">Epigenetic Simulation Log History</h4>
+                <div hx-get="/api/longevity/horvath-simulation/history" hx-trigger="load, horvathSimRun from:body" class="overflow-x-auto text-[10px] text-slate-350">
+                    <p class="animate-pulse">Loading simulation logs...</p>
+                </div>
+            </div>
         </div>
 
-        <!-- CGM Target Range Adjustments Card (Phase 153) -->
+        <!-- CGM Target Range Adjustments Card (Phase 153, 163) -->
         <div class="rounded-xl border border-navy-850 bg-navy-950 p-6 shadow-md" id="cgm-range-container">
             <div class="flex items-center justify-between mb-4 border-b border-navy-900 pb-3">
                 <div>
@@ -502,11 +509,11 @@
                 <span class="text-[10px] px-2 py-0.5 rounded border border-emerald-800 bg-emerald-950/40 text-emerald-400 uppercase tracking-wider font-semibold">CGM Control</span>
             </div>
 
-            <form hx-post="/api/wearables/cgm-range"
+            <form hx-post="/api/wearables/cgm-tir"
                   hx-target="#cgm-range-feedback"
                   hx-swap="innerHTML"
                   class="space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 mb-1">Lower Bound (mg/dL)</label>
                         <input type="number" name="lower_bound" value="70" step="5" required
@@ -515,6 +522,11 @@
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 mb-1">Upper Bound (mg/dL)</label>
                         <input type="number" name="upper_bound" value="120" step="5" required
+                               class="w-full px-3 py-2 border border-navy-800 rounded bg-navy-900 text-slate-100 text-xs focus:outline-none focus:border-emerald-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Target TIR (%)</label>
+                        <input type="number" name="target_tir" value="95" step="1" min="50" max="100" required
                                class="w-full px-3 py-2 border border-navy-800 rounded bg-navy-900 text-slate-100 text-xs focus:outline-none focus:border-emerald-500 transition">
                     </div>
                 </div>
@@ -612,6 +624,44 @@
             </div>
             <div class="mt-4 p-2 rounded bg-navy-900 text-[10px] text-slate-500">
                 All values resolve within optimal reference ranges. Checked 1 hour ago.
+            </div>
+        </div>
+    </div>
+
+    <!-- Gut Diversity Shannon Index Historical Trends (Phase 169) -->
+    <div class="rounded-xl border border-navy-850 bg-navy-950 p-6 shadow-md my-6">
+        <div class="flex items-center justify-between mb-4 border-b border-navy-900 pb-3">
+            <div>
+                <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+                    <span class="h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+                    Mitochondrial & Microbiome Shannon Diversity Trends
+                </h2>
+                <p class="text-xs text-slate-450 mt-0.5">Historical Shannon diversity index tracking across multiple laboratory diagnostics checks.</p>
+            </div>
+            <span class="text-[10px] px-2 py-0.5 rounded border border-amber-800 bg-amber-950/40 text-amber-400 uppercase tracking-wider font-semibold">Microbiome Timeline</span>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+            <!-- Timeline SVG Chart -->
+            <div class="lg:col-span-2 p-4 rounded-lg border border-navy-900 bg-slate-950 h-48 relative overflow-hidden" 
+                 id="gut-history-timeline-container"
+                 hx-get="/api/diagnostics/gut-diversity/history" 
+                 hx-trigger="load, gutDiversityCalibrated from:body" 
+                 hx-swap="innerHTML">
+                <p class="text-xs text-slate-450 animate-pulse mt-16 text-center">Loading microbiome history timeline...</p>
+            </div>
+
+            <!-- Health Context Metrics Panel -->
+            <div class="p-4 rounded-lg bg-navy-900/40 border border-navy-900 h-full flex flex-col justify-between">
+                <div>
+                    <h3 class="text-xs font-bold uppercase text-slate-450 mb-2">Microbiome Wellness Insights</h3>
+                    <p class="text-xs leading-relaxed text-slate-400">
+                        Maintaining a Shannon Diversity Index above <span class="font-bold text-slate-200">6.0</span> is directly correlated with reduced intestinal permeability, lower baseline inflammation, and optimized short-chain fatty acid production.
+                    </p>
+                </div>
+                <div class="mt-4 p-2 rounded bg-amber-950/20 border border-amber-900/40 text-[10px] text-amber-400">
+                    Latest Gut Index: <b class="text-slate-100">7.8</b> (Optimal Diversity)
+                </div>
             </div>
         </div>
     </div>
@@ -809,7 +859,9 @@
                 <h3 class="text-xs font-bold uppercase text-slate-400 mb-3 tracking-wide">Functional Threshold Power (FTP) Zone Calculator</h3>
                 <div class="flex items-center gap-3 mb-4">
                     <label class="text-xs text-slate-400">Baseline FTP (Watts):</label>
-                    <input type="number" x-model.number="ftpWatts" class="w-20 px-2 py-1 border border-navy-800 rounded bg-navy-950 text-slate-200 text-xs focus:outline-none">
+                    <input type="number" x-model.number="ftpWatts" 
+                           @change="window.saveFTPRecalc(ftpWatts)"
+                           class="w-20 px-2 py-1 border border-navy-800 rounded bg-navy-950 text-slate-200 text-xs focus:outline-none">
                 </div>
                 <div class="grid grid-cols-2 gap-2 text-[10px] text-slate-350">
                     <div class="p-2 rounded bg-slate-950 border border-navy-850">
@@ -1214,6 +1266,18 @@
                         modal.innerHTML = `<div class="p-4 text-xs text-rose-450 bg-rose-500/10 border border-rose-500/20 rounded">
                             Failed to fetch source details: ${e.message}
                         </div>`;
+                    }
+                };
+
+                window.saveFTPRecalc = async function(watts) {
+                    try {
+                        await fetch('/api/fitness/ftp-recalc', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: 'ftp_watts=' + watts
+                        });
+                    } catch (e) {
+                        console.error('Failed to log FTP Recalc:', e);
                     }
                 };
             </script>

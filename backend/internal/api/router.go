@@ -98,12 +98,16 @@ func ConfigureRouter() *chi.Mux {
 			// Billing and Invoicing
 			r.Post("/billing/invoice", HandleCreateBillingInvoice)
 
-			// Longevity, Wearables, and Fitness extensions (Phases 152, 154, 156, 158, 160)
+			// Longevity, Wearables, and Fitness extensions (Phases 152, 154, 156, 158, 160, 162, 164, 168, 170)
 			r.Post("/longevity/horvath-simulation", HandleHorvathSimulation)
+			r.Get("/longevity/horvath-simulation/history", HandleGetHorvathSimulationHistory)
 			r.Post("/wearables/cgm-range", HandleCGMRangeConfig)
+			r.Post("/wearables/cgm-tir", HandleCGMTIRConfig)
 			r.Get("/knowsitall/publication/{pmid}", HandleGetPublicationMetadata)
 			r.Post("/fitness/schedule", HandleScheduleWorkout)
+			r.Post("/fitness/ftp-recalc", HandleFTPRecalc)
 			r.Post("/diagnostics/gut-diversity", HandleGutDiversityConfig)
+			r.Get("/diagnostics/gut-diversity/history", HandleGetGutDiversityHistory)
 		})
 	})
 

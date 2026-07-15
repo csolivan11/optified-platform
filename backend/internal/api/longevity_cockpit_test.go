@@ -244,3 +244,124 @@ func TestHandleGutDiversityConfigForbidden(t *testing.T) {
 		t.Errorf("expected 403 Forbidden, got %v", rr.Code)
 	}
 }
+
+func TestHandleGetHorvathSimulationHistory(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/longevity/horvath-simulation/history", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetHorvathSimulationHistory)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Date/Time") {
+		t.Errorf("expected log table headers, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleCGMTIRConfig(t *testing.T) {
+	form := url.Values{}
+	form.Set("lower_bound", "70")
+	form.Set("upper_bound", "130")
+	form.Set("target_tir", "96")
+
+	req, err := http.NewRequest("POST", "/api/wearables/cgm-tir", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleCGMTIRConfig)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Glycemic TIR targets calibrated") {
+		t.Errorf("expected calibration message, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleFTPRecalc(t *testing.T) {
+	form := url.Values{}
+	form.Set("ftp_watts", "275")
+
+	req, err := http.NewRequest("POST", "/api/fitness/ftp-recalc", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleFTPRecalc)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "FTP zone adjustments successfully recorded") {
+		t.Errorf("expected confirmation message, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetGutDiversityHistory(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/diagnostics/gut-diversity/history", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetGutDiversityHistory)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "<svg") {
+		t.Errorf("expected SVG visualization response, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleUploadPaperPDFValidation(t *testing.T) {
+	form := url.Values{}
+	form.Set("impact_factor", "invalid")
+	
+	req, err := http.NewRequest("POST", "/api/knowsitall/upload-paper", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "coach-id-123", "coach")
+	req = req.WithContext(ctx)
+	
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleUploadPaperPDF)
+	handler.ServeHTTP(rr, req)
+	
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 Bad Request, got %v", rr.Code)
+	}
+}
