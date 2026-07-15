@@ -1807,6 +1807,10 @@ func HandleScheduleWorkout(w http.ResponseWriter, r *http.Request) {
 
 	workoutType := r.FormValue("workout_type")
 	scheduledDate := r.FormValue("scheduled_date")
+	recurrence := r.FormValue("recurrence")
+	if recurrence == "" {
+		recurrence = "once"
+	}
 
 	if workoutType == "" || scheduledDate == "" {
 		http.Error(w, "Missing workout_type or scheduled_date", http.StatusBadRequest)
@@ -1818,7 +1822,7 @@ func HandleScheduleWorkout(w http.ResponseWriter, r *http.Request) {
 	resType := "fitness_protocol"
 	ip := r.RemoteAddr
 	ua := r.UserAgent()
-	meta := fmt.Sprintf(`{"workout_type": %q, "scheduled_date": %q}`, workoutType, scheduledDate)
+	meta := fmt.Sprintf(`{"workout_type": %q, "scheduled_date": %q, "recurrence": %q}`, workoutType, scheduledDate, recurrence)
 
 	auditLog := repository.AuditLog{
 		ActorID:        clientID,
@@ -1836,9 +1840,9 @@ func HandleScheduleWorkout(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write([]byte(fmt.Sprintf(`
 		<div class="p-2.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px]">
-			Workout scheduled: <b class="text-slate-100">%s</b> on %s.
+			Workout scheduled: <b class="text-slate-100">%s</b> on %s (Pattern: <span class="uppercase font-mono font-semibold">%s</span>).
 		</div>
-	`, workoutType, scheduledDate)))
+	`, workoutType, scheduledDate, recurrence)))
 }
 
 // HandleGutDiversityConfig updates target Shannon diversity index parameters
@@ -2199,5 +2203,175 @@ func HandleGetGutDiversityHistory(w http.ResponseWriter, r *http.Request) {
 	`, points, labels)
 
 	w.Write([]byte(svg))
+}
+
+// HandleGetHorvathSimulationDelta returns a visual age offset delta bar comparison as HTML
+func HandleGetHorvathSimulationDelta(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	chronAge := 45.0
+	bioAge := 35.1
+
+	if db.Pool != nil {
+		var metaStr string
+		err := db.Pool.QueryRow(ctx,
+			`SELECT metadata FROM public.audit_logs 
+			 WHERE actor_id = $1 AND action = 'run_horvath_simulation' 
+			 ORDER BY created_at DESC LIMIT 1`,
+			clientID,
+		).Scan(&metaStr)
+		if err == nil {
+			var meta map[string]interface{}
+			if err := json.Unmarshal([]byte(metaStr), &meta); err == nil {
+				if c, ok := meta["chronological_age"].(float64); ok {
+					chronAge = c
+				}
+				if b, ok := meta["predicted_bio_age"].(float64); ok {
+					bioAge = b
+				}
+			}
+		}
+	}
+
+	delta := bioAge - chronAge
+	statusColor := "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+	statusText := "Optimal Anti-Aging Offset"
+	if delta > 0 {
+		statusColor = "text-rose-400 bg-rose-500/10 border-rose-500/20"
+		statusText = "Accelerated Aging Trend"
+	} else if delta == 0 {
+		statusColor = "text-slate-400 bg-slate-500/10 border-slate-500/20"
+		statusText = "Equivalent Biological Age"
+	}
+
+	// Bar width percentage mapping
+	progressPct := int(100.0 * (1.0 - (delta / 20.0)))
+	if progressPct < 10 {
+		progressPct = 10
+	}
+	if progressPct > 100 {
+		progressPct = 100
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(fmt.Sprintf(`
+		<div class="space-y-2 text-xs">
+			<div class="flex justify-between items-center">
+				<span class="text-slate-400 uppercase font-semibold tracking-wider text-[9px]">Epigenetic Offset (Bio vs. Chron Age)</span>
+				<span class="px-1.5 py-0.5 rounded border text-[9px] font-bold uppercase %s">%s</span>
+			</div>
+			<div class="flex items-center gap-2">
+				<span class="text-slate-500 font-mono text-[10px]">Delta: %.1f yrs</span>
+				<div class="flex-1 bg-navy-900 h-2.5 rounded-full overflow-hidden border border-navy-800">
+					<div class="bg-cyan-500 h-full rounded-full transition-all duration-500" style="width: %d%%"></div>
+				</div>
+				<span class="text-slate-300 font-bold font-mono">%.1f yrs</span>
+			</div>
+		</div>
+	`, statusColor, statusText, delta, progressPct, bioAge)))
+}
+
+// HandleCGMTIRAlertConfig updates minimum glycemic TIR alert thresholds
+func HandleCGMTIRAlertConfig(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	clientRole, _ := ctx.Value(UserRoleKey).(string)
+
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Failed to parse form", http.StatusBadRequest)
+		return
+	}
+
+	thresholdStr := r.FormValue("alert_threshold")
+	threshold, err := strconv.ParseFloat(thresholdStr, 64)
+	if err != nil || threshold < 50.0 || threshold > 99.0 {
+		http.Error(w, "Invalid alert threshold percentage (must be between 50 and 99)", http.StatusBadRequest)
+		return
+	}
+
+	// Logging simulated metrics
+	action := "configured_cgm_tir_alert_rules"
+	resType := "wearables_alert_configuration"
+	ip := r.RemoteAddr
+	ua := r.UserAgent()
+	meta := fmt.Sprintf(`{"alert_threshold": %.1f}`, threshold)
+
+	auditLog := repository.AuditLog{
+		ActorID:        clientID,
+		ActorRole:      clientRole,
+		Action:         action,
+		ResourceType:   &resType,
+		TargetClientID: &clientID,
+		IPAddress:      &ip,
+		UserAgent:      &ua,
+		Metadata:       &meta,
+	}
+	auditRepo := &repository.AuditLogRepo{}
+	_ = auditRepo.Create(ctx, auditLog)
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(fmt.Sprintf(`
+		<div class="p-2 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] mt-2">
+			TIR alert threshold set to: <b class="text-slate-100 font-bold">%.0f%%</b>. Alerts will trigger if TIR falls below limit.
+		</div>
+	`, threshold)))
+}
+
+// HandleGetGutDiversityPercentile returns the client's gut diversity Shannon index percentile alignment relative to the cohort
+func HandleGetGutDiversityPercentile(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	score := 7.8
+	if db.Pool != nil {
+		var metaStr string
+		err := db.Pool.QueryRow(ctx,
+			`SELECT metadata FROM public.audit_logs 
+			 WHERE target_client_id = $1 AND action = 'adjusted_gut_diversity_target' 
+			 ORDER BY created_at DESC LIMIT 1`,
+			clientID,
+		).Scan(&metaStr)
+		if err == nil {
+			var meta map[string]interface{}
+			if err := json.Unmarshal([]byte(metaStr), &meta); err == nil {
+				if s, ok := meta["target_diversity"].(float64); ok {
+					score = s
+				}
+			}
+		}
+	}
+
+	// Calculate simulated percentile location
+	percentile := 95.0
+	if score < 5.0 {
+		percentile = 32.0
+	} else if score < 6.0 {
+		percentile = 55.0
+	} else if score < 7.0 {
+		percentile = 78.0
+	} else if score < 8.0 {
+		percentile = 88.0 + (score-7.0)*10.0
+	} else {
+		percentile = 98.0
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(fmt.Sprintf(`
+		<span>Latest Gut Index: <b class="text-slate-100">%.1f</b> (Optimal Diversity - <span class="font-bold text-amber-400">Top %.0f%%</span> of Reference Cohort)</span>
+	`, score, 100.0-percentile)))
 }
 

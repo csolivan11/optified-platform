@@ -283,7 +283,17 @@ func HandleUploadPaperPDF(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	slog.Info("Academic paper uploaded for analysis", slog.String("filename", header.Filename), slog.Float64("impact_factor", impactFactor))
+	tags := r.FormValue("tags")
+	if len(strings.TrimSpace(tags)) == 0 {
+		http.Error(w, "Focus tags are mandatory metadata parameters", http.StatusBadRequest)
+		return
+	}
+
+	slog.Info("Academic paper uploaded for analysis", 
+		slog.String("filename", header.Filename), 
+		slog.Float64("impact_factor", impactFactor),
+		slog.String("tags", tags),
+	)
 
 	// Mock parsing result (Phase 65 uploader)
 	parsedTitle := "Carbohydrate Intake Ratios and Glycogen Synthesis during High-Intensity Workouts"
@@ -307,7 +317,8 @@ func HandleUploadPaperPDF(w http.ResponseWriter, r *http.Request) {
 		<div class="p-3 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] mt-2">
 			<span class="font-bold block mb-1">Paper Parsed and Ingested successfully:</span>
 			Title: <span class="text-slate-200">%s</span><br>
-			Abstract: <span class="text-slate-350 italic block mt-1">%s</span>
+			Tags: <span class="px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 font-mono text-[9px]">%s</span><br>
+			Abstract: <span class="text-slate-355 italic block mt-1">%s</span>
 		</div>
-	`, parsedTitle, parsedAbstract)))
+	`, parsedTitle, tags, parsedAbstract)))
 }

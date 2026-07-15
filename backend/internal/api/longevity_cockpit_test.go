@@ -365,3 +365,73 @@ func TestHandleUploadPaperPDFValidation(t *testing.T) {
 		t.Errorf("expected 400 Bad Request, got %v", rr.Code)
 	}
 }
+
+func TestHandleGetHorvathSimulationDelta(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/longevity/horvath-simulation/delta", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetHorvathSimulationDelta)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Epigenetic Offset") {
+		t.Errorf("expected epigenetic offset delta wrapper, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleCGMTIRAlertConfig(t *testing.T) {
+	form := url.Values{}
+	form.Set("alert_threshold", "92")
+
+	req, err := http.NewRequest("POST", "/api/wearables/cgm-tir/alert", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleCGMTIRAlertConfig)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "TIR alert threshold set to") {
+		t.Errorf("expected confirmation message, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetGutDiversityPercentile(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/diagnostics/gut-diversity/percentile", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetGutDiversityPercentile)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Latest Gut Index") {
+		t.Errorf("expected gut index percentile content, got %s", rr.Body.String())
+	}
+}
