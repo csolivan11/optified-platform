@@ -606,6 +606,14 @@
                 <p class="text-[10px] text-slate-550">Loading hourly average glycemic metrics...</p>
             </div>
 
+            <!-- CGM Daily glucose stats bounds (Phase 268) -->
+            <div class="mt-2 p-2.5 rounded bg-navy-900 border border-navy-850 text-[10px] text-slate-355 flex justify-between items-center"
+                 hx-get="/api/wearables/cgm-tir/bounds"
+                 hx-trigger="load, cgmRangeUpdated from:body"
+                 hx-swap="innerHTML">
+                <span>Loading daily glucose bounds...</span>
+            </div>
+
             <div class="mt-4 border-t border-navy-900 pt-3">
                 <h4 class="text-xs font-semibold text-slate-400 mb-2">Configure Minimum TIR Alert Thresholds</h4>
                 <form hx-post="/api/wearables/cgm-tir/alert"
@@ -783,7 +791,19 @@
                         Maintaining a Shannon Diversity Index above <span class="font-bold text-slate-200">6.0</span> is directly correlated with reduced intestinal permeability, lower baseline inflammation, and optimized short-chain fatty acid production.
                     </p>
                 </div>
-                <div class="mt-2 p-2 rounded bg-navy-955 text-[10px] text-slate-355 border border-navy-850"
+                <div class="mt-2 flex gap-1.5 justify-start">
+                    <button hx-get="/api/diagnostics/gut-diversity/advice/custom?category=diet"
+                            hx-target="#microbiome-advice-container"
+                            class="px-1.5 py-0.5 rounded bg-cyan-955 text-cyan-400 border border-cyan-900/40 text-[9px]">
+                        Diet
+                    </button>
+                    <button hx-get="/api/diagnostics/gut-diversity/advice/custom?category=supplements"
+                            hx-target="#microbiome-advice-container"
+                            class="px-1.5 py-0.5 rounded bg-navy-950 text-slate-455 border border-navy-850 text-[9px]">
+                        Supplements
+                    </button>
+                </div>
+                <div id="microbiome-advice-container" class="mt-2 p-2 rounded bg-navy-955 text-[10px] text-slate-355 border border-navy-850"
                      hx-get="/api/diagnostics/gut-diversity/advice"
                      hx-trigger="load, gutDiversityCalibrated from:body"
                      hx-swap="innerHTML">
@@ -806,6 +826,12 @@
                      hx-trigger="load, gutDiversityCalibrated from:body"
                      hx-swap="innerHTML">
                     <span class="animate-pulse">Loading gut phylum breakdown...</span>
+                </div>
+                <div class="mt-2 p-2 rounded bg-navy-950 text-[10px] text-slate-355 border border-navy-850 flex justify-between items-center"
+                     hx-get="/api/diagnostics/gut-diversity/phylum/history"
+                     hx-trigger="load, gutDiversityCalibrated from:body"
+                     hx-swap="innerHTML">
+                    <span class="animate-pulse">Loading gut phylum progression history...</span>
                 </div>
                 <div class="mt-2 p-2 rounded bg-navy-950 text-[10px] text-slate-355 border border-navy-850 flex justify-between items-center"
                      hx-get="/api/diagnostics/gut-diversity/alerts"

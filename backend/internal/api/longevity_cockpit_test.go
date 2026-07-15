@@ -1074,3 +1074,179 @@ func TestHandleExportQuestBiomarkersCSV(t *testing.T) {
 		t.Errorf("expected Quest CSV content, got %s", rr.Body.String())
 	}
 }
+
+func TestHandleGetUserSecurityLogs(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/profile/security-logs", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetUserSecurityLogs)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "SUCCESS_LOGIN") {
+		t.Errorf("expected security logs content, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetCGMGlucoseBounds(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/wearables/cgm-tir/bounds", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetCGMGlucoseBounds)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Avg Glucose:") {
+		t.Errorf("expected CGM bounds, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleExportClinicalNotesMarkdown(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/clinical-notes/export/markdown", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleExportClinicalNotesMarkdown)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Clinical Notes History") {
+		t.Errorf("expected markdown content, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetGutMicrobiomeCustomAdvice(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/diagnostics/gut-diversity/advice/custom?category=diet", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetGutMicrobiomeCustomAdvice)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Akkermansia abundance") {
+		t.Errorf("expected Diet advice, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetClientBillingInvoicesHistory(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/billing/invoices/history", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetClientBillingInvoicesHistory)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "PAID") {
+		t.Errorf("expected invoice list, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleUpdateUserMFAConfig(t *testing.T) {
+	req, err := http.NewRequest("POST", "/api/profile/mfa/config", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleUpdateUserMFAConfig)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "configured as:") {
+		t.Errorf("expected MFA update confirmation, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetGutPhylumHistoryChart(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/diagnostics/gut-diversity/phylum/history", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetGutPhylumHistoryChart)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "<svg") {
+		t.Errorf("expected phylum history SVG, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetKnowsItAllParserMockProgress(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/knowsitall/upload-paper/progress", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetKnowsItAllParserMockProgress)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "completed") {
+		t.Errorf("expected parser status json, got %s", rr.Body.String())
+	}
+}

@@ -185,10 +185,16 @@
         <div>
             <div class="flex justify-between items-center mb-3">
                 <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-450">Clinical / Medical Notes History (PHI)</h3>
-                <button hx-get="/api/audit-logs/{{.Client.ID}}" hx-target="#notes-list" hx-swap="innerHTML"
-                        class="px-2.5 py-1 border border-navy-800 rounded bg-navy-900 hover:bg-navy-850 text-[10px] font-semibold text-slate-355 hover:text-white transition">
-                    View Audit Trail
-                </button>
+                <div class="flex gap-2">
+                    <a href="/api/clinical-notes/export/markdown" download
+                       class="px-2.5 py-1 border border-navy-800 rounded bg-navy-900 hover:bg-navy-850 text-[10px] font-semibold text-slate-355 hover:text-white transition">
+                        Export Markdown
+                    </a>
+                    <button hx-get="/api/audit-logs/{{.Client.ID}}" hx-target="#notes-list" hx-swap="innerHTML"
+                            class="px-2.5 py-1 border border-navy-800 rounded bg-navy-900 hover:bg-navy-850 text-[10px] font-semibold text-slate-355 hover:text-white transition">
+                        View Audit Trail
+                    </button>
+                </div>
             </div>
             <div id="notes-list" class="space-y-4">
                 {{range .Notes}}
@@ -459,10 +465,26 @@
                             <input type="text" name="journal_name" placeholder="e.g. Nature Medicine" required
                                    class="w-full px-2 py-1 border border-navy-800 rounded bg-navy-950 text-slate-200 text-xs focus:outline-none">
                         </div>
+                        <div class="flex-1 min-w-[150px]">
+                            <label class="block text-[10px] text-slate-500 uppercase mb-1">Custom Title Override (Optional)</label>
+                            <input type="text" name="custom_title" placeholder="e.g. Manual Title Edit"
+                                   class="w-full px-2 py-1 border border-navy-800 rounded bg-navy-950 text-slate-200 text-xs focus:outline-none">
+                        </div>
                     </div>
-                    <button type="submit" class="w-full py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold transition">
+                    <button type="submit" class="w-full py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold transition"
+                            onclick="document.getElementById('upload-progress-bar').classList.remove('hidden');">
                         Upload and Parse Paper
                     </button>
+                    <!-- Progress Loader (Phase 286) -->
+                    <div id="upload-progress-bar" class="hidden mt-2 space-y-1">
+                        <div class="flex justify-between text-[8px] text-slate-500 font-mono">
+                            <span>Ingestion Progress</span>
+                            <span>100% (Parsing Complete)</span>
+                        </div>
+                        <div class="w-full h-1.5 bg-navy-900 rounded overflow-hidden">
+                            <div class="bg-cyan-400 h-full w-full animate-pulse"></div>
+                        </div>
+                    </div>
                 </form>
                 <div id="paper-uploader-feedback" class="mt-2"></div>
             </div>

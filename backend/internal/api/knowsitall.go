@@ -341,8 +341,12 @@ func HandleUploadPaperPDF(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Mock parsing result (Phase 65 uploader)
+	// Mock parsing result (Phase 65 uploader) with custom title overrides (Phase 277)
+	customTitle := r.FormValue("custom_title")
 	parsedTitle := "Carbohydrate Intake Ratios and Glycogen Synthesis during High-Intensity Workouts"
+	if len(strings.TrimSpace(customTitle)) > 0 {
+		parsedTitle = customTitle
+	}
 	parsedAbstract := "This paper evaluates the glycogen replenishment rates using 1.2 g/kg/h carbohydrate ratios in Swiss elite endurance athletes, showing a 30% increase in performance markers."
 	
 	// Create simulated temporary database entry for uploader review
@@ -438,4 +442,10 @@ func HandleGetPublicationsList(w http.ResponseWriter, r *http.Request) {
 		html = `<div class="p-4 text-center text-[10px] text-slate-500">No indexed publications match filter.</div>`
 	}
 	w.Write([]byte(html))
+}
+
+// HandleGetKnowsItAllParserMockProgress returns mock parser upload progress stats (Phase 287)
+func HandleGetKnowsItAllParserMockProgress(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"success": true, "progress_percentage": 100, "status": "completed"}`))
 }
