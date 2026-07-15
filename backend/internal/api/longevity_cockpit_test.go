@@ -982,3 +982,95 @@ func TestRateLimiterMiddleware(t *testing.T) {
 		t.Errorf("expected 429 Too Many Requests on brute force, got %v", rr.Code)
 	}
 }
+
+func TestHandleSaveProfileTimezone(t *testing.T) {
+	form := url.Values{}
+	form.Set("timezone", "EST")
+
+	req, err := http.NewRequest("POST", "/api/profile/timezone", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleSaveProfileTimezone)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Profile timezone preference saved as") {
+		t.Errorf("expected timezone confirmation, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetHRVChart(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/wearables/hrv/chart", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetHRVChart)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "<svg") {
+		t.Errorf("expected HRV SVG, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleCancelConsultation(t *testing.T) {
+	req, err := http.NewRequest("POST", "/api/consultations/cancel", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleCancelConsultation)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Consultation Cancelled") {
+		t.Errorf("expected cancellation message, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleExportQuestBiomarkersCSV(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/diagnostics/reports/quest/csv", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleExportQuestBiomarkersCSV)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Apolipoprotein B (apoB)") {
+		t.Errorf("expected Quest CSV content, got %s", rr.Body.String())
+	}
+}

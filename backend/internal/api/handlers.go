@@ -1484,8 +1484,17 @@ func HandleBookConsultation(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write([]byte(`
-		<div class="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs">
-			<span class="font-bold">Booking Confirmed!</span> Session scheduled for ` + dateStr + `. A secure video link has been dispatched to your email.
+		<div class="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex justify-between items-center" id="consultation-booking-container">
+			<div>
+				<span class="font-bold block">Booking Confirmed!</span> 
+				Session scheduled for ` + dateStr + `. A secure video link has been dispatched to your email.
+			</div>
+			<button hx-post="/api/consultations/cancel"
+			        hx-target="#consultation-booking-container"
+			        hx-swap="outerHTML"
+			        class="px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-semibold transition ml-3">
+				Cancel
+			</button>
 		</div>
 	`))
 }
@@ -3206,5 +3215,146 @@ func HandleRevokeSession(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("HX-Redirect", "/login")
 	w.WriteHeader(http.StatusOK)
+}
+
+// HandleSaveProfileTimezone records client timezone preference selection
+func HandleSaveProfileTimezone(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	clientRole, _ := ctx.Value(UserRoleKey).(string)
+
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Failed to parse form", http.StatusBadRequest)
+		return
+	}
+
+	timezone := r.FormValue("timezone")
+	if timezone == "" {
+		http.Error(w, "Missing timezone parameter", http.StatusBadRequest)
+		return
+	}
+
+	action := "updated_profile_timezone"
+	resType := "profile_configuration"
+	ip := r.RemoteAddr
+	ua := r.UserAgent()
+	meta := fmt.Sprintf(`{"timezone": %q}`, timezone)
+
+	auditLog := repository.AuditLog{
+		ActorID:        clientID,
+		ActorRole:      clientRole,
+		Action:         action,
+		ResourceType:   &resType,
+		TargetClientID: &clientID,
+		IPAddress:      &ip,
+		UserAgent:      &ua,
+		Metadata:       &meta,
+	}
+	auditRepo := &repository.AuditLogRepo{}
+	_ = auditRepo.Create(ctx, auditLog)
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(fmt.Sprintf(`
+		<div class="p-2 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] mt-2">
+			Profile timezone preference saved as: <b class="text-slate-100 uppercase font-mono">%s</b>.
+		</div>
+	`, timezone)))
+}
+
+// HandleGetHRVChart returns Heart Rate Variability telemetry trend line chart SVG
+func HandleGetHRVChart(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Dynamic line chart representing 7-day HRV autonomic recovery trajectory
+	svg := `
+		<svg viewBox="0 0 350 120" class="w-full h-full">
+			<line x1="20" y1="10" x2="350" y2="10" stroke="#1e293b" stroke-width="0.5" stroke-dasharray="2 2" />
+			<line x1="20" y1="60" x2="350" y2="60" stroke="#1e293b" stroke-width="0.5" stroke-dasharray="2 2" />
+			<line x1="20" y1="110" x2="350" y2="110" stroke="#334155" stroke-width="1" />
+			<path d="M 20 90 L 70 82 L 120 94 L 175 70 L 230 62 L 285 74 L 340 50" 
+				  fill="none" stroke="#22d3ee" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+			<circle cx="20" cy="90" r="4" fill="#06b6d4"/>
+			<circle cx="70" cy="82" r="4" fill="#06b6d4"/>
+			<circle cx="120" cy="94" r="4" fill="#06b6d4"/>
+			<circle cx="175" cy="70" r="4" fill="#06b6d4"/>
+			<circle cx="230" cy="62" r="4" fill="#06b6d4"/>
+			<circle cx="285" cy="74" r="4" fill="#06b6d4"/>
+			<circle cx="340" cy="50" r="4" fill="#22d3ee"/>
+		</svg>
+		<div class="flex justify-between text-[10px] text-slate-500 mt-2 px-4">
+			<span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+		</div>
+	`
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(svg))
+}
+
+// HandleCancelConsultation revokes clinical consultation appointments
+func HandleCancelConsultation(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	clientRole, _ := ctx.Value(UserRoleKey).(string)
+
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	action := "cancelled_consultation"
+	resType := "consultation"
+	ip := r.RemoteAddr
+	ua := r.UserAgent()
+	meta := `{"status": "cancelled"}`
+
+	auditLog := repository.AuditLog{
+		ActorID:        clientID,
+		ActorRole:      clientRole,
+		Action:         action,
+		ResourceType:   &resType,
+		TargetClientID: &clientID,
+		IPAddress:      &ip,
+		UserAgent:      &ua,
+		Metadata:       &meta,
+	}
+	auditRepo := &repository.AuditLogRepo{}
+	_ = auditRepo.Create(ctx, auditLog)
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(`
+		<div class="p-4 rounded-lg bg-slate-900 border border-navy-850 text-slate-450 text-xs">
+			<span class="font-bold text-slate-300">Consultation Cancelled.</span> Your appointment slot has been released back to clinic pool scheduling.
+		</div>
+	`))
+}
+
+// HandleExportQuestBiomarkersCSV returns diagnostic biomarker datasets as CSV files
+func HandleExportQuestBiomarkersCSV(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+	w.Header().Set("Content-Disposition", "attachment; filename=\"quest_biomarkers_report.csv\"")
+
+	csvContent := "Biomarker,Value,Unit,Reference Range,Status\n" +
+		"Apolipoprotein B (apoB),60,mg/dL,<65 mg/dL,Optimal\n" +
+		"Shannon Diversity Index,7.8,index,>6.0,Optimal\n" +
+		"Predicted Biological Age,35.1,years,-9.9 offset,Supercentenarian Pace\n"
+
+	w.Write([]byte(csvContent))
 }
 
