@@ -215,6 +215,16 @@ func ConfigureRouter() *chi.Mux {
 			r.Get("/wearables/hrv/sleep-correlation/yearly/monthly", HandleGetHRVSleepCorrelationYearlyMonthly)
 			r.Get("/profile/security-locations/search", HandleSearchSecurityLocations)
 			r.Get("/consultations/calendar/logs", HandleGetConsultationCalendarInviteLogs)
+
+			// Phases 441-465 Extensions
+			r.Get("/longevity/horvath-simulation/grimage-history/search", HandleSearchHorvathSimulationGrimAgeHistory)
+			r.Post("/clients/config/search-delay/default", HandleUpdateClinicianSearchDelayOptionDefault)
+			r.Get("/billing/receipts/preference/logs", HandleGetBillingReceiptPreferenceLogs)
+			r.Get("/knowsitall/publication/comment/search", HandleSearchPublicationComments)
+			r.Get("/wearables/hrv/sleep-correlation/yearly/monthly/details", HandleGetHRVSleepCorrelationYearlyMonthlyDetails)
+			r.Get("/knowsitall/upload-paper/raw-json/logs", HandleGetKnowsItAllParserRawJSONMetadataLogs)
+			r.Get("/consultations/calendar/logs/search", HandleSearchConsultationCalendarInviteLogs)
+			r.Get("/fitness/alerts/zone1", HandleGetFitnessAlertsZone1)
 		})
 	})
 

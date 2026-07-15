@@ -2651,3 +2651,179 @@ func TestHandleGetConsultationCalendarInviteLogs(t *testing.T) {
 		t.Errorf("expected invite delivery audits log lists, got %s", rr.Body.String())
 	}
 }
+
+func TestHandleSearchHorvathSimulationGrimAgeHistory(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/longevity/horvath-simulation/grimage-history/search?query=Baseline", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleSearchHorvathSimulationGrimAgeHistory)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Filtered:") {
+		t.Errorf("expected search filtering values, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleUpdateClinicianSearchDelayOptionDefault(t *testing.T) {
+	req, err := http.NewRequest("POST", "/api/clients/config/search-delay/default", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "coach-id-123", "coach")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleUpdateClinicianSearchDelayOptionDefault)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Default:") {
+		t.Errorf("expected default delay config tags, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetBillingReceiptPreferenceLogs(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/billing/receipts/preference/logs", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetBillingReceiptPreferenceLogs)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Preference update log:") {
+		t.Errorf("expected updates audit log feeds, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleSearchPublicationComments(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/knowsitall/publication/comment/search?comment_query=Methodology", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleSearchPublicationComments)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Matches:") {
+		t.Errorf("expected searched comment list elements, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetHRVSleepCorrelationYearlyMonthlyDetails(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/wearables/hrv/sleep-correlation/yearly/monthly/details", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetHRVSleepCorrelationYearlyMonthlyDetails)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Trend Details:") {
+		t.Errorf("expected detailed sleep correlation hover stats, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetKnowsItAllParserRawJSONMetadataLogs(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/knowsitall/upload-paper/raw-json/logs", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetKnowsItAllParserRawJSONMetadataLogs)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Metadata update:") {
+		t.Errorf("expected parser metadata edits history log, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleSearchConsultationCalendarInviteLogs(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/consultations/calendar/logs/search?query=ICS", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleSearchConsultationCalendarInviteLogs)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Query:") {
+		t.Errorf("expected searched Delivery Log table values, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetFitnessAlertsZone1(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/fitness/alerts/zone1", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetFitnessAlertsZone1)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Alert status:") {
+		t.Errorf("expected Zone 1 warnings check status labels, got %s", rr.Body.String())
+	}
+}

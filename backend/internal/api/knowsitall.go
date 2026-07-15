@@ -451,11 +451,21 @@ func HandleGetPublicationsList(w http.ResponseWriter, r *http.Request) {
 				</form>
 				<div id="pub-comment-feedback-%s" class="text-[8px] text-amber-500 italic mt-0.5"></div>
 				<!-- Annotation comments inline logs list (Phase 426) -->
-				<div hx-get="/api/knowsitall/publication/comment?pmid=%s" hx-trigger="load, pubCommentUpdated from:body" class="mt-1 space-y-1 text-[7px] text-slate-400">
-					<p class="animate-pulse">Loading annotations history logs...</p>
+				<div class="mt-1 p-1 rounded bg-navy-950/80 border border-navy-900">
+					<div class="flex justify-between items-center mb-0.5">
+						<span class="text-[6px] text-slate-500 uppercase block font-semibold">Annotation Notes History</span>
+						<input type="text" name="comment_query" placeholder="Filter notes..."
+						       hx-get="/api/knowsitall/publication/comment/search?pmid=%s"
+						       hx-trigger="keyup changed delay:300ms"
+						       hx-target="#pub-comments-logs-%s"
+						       class="px-1 py-0.5 border border-navy-800 rounded bg-navy-950 text-slate-200 text-[6px] focus:outline-none">
+					</div>
+					<div id="pub-comments-logs-%s" hx-get="/api/knowsitall/publication/comment?pmid=%s" hx-trigger="load, pubCommentUpdated from:body" class="space-y-0.5 text-[7px] text-slate-400">
+						<p class="animate-pulse">Loading annotations history logs...</p>
+					</div>
 				</div>
 			</div>`,
-			pub.Title, pub.PMID, pub.Citation, pub.Tags, pub.PMID, pub.PMID, pub.PMID, pub.PMID, pub.PMID, pub.PMID, pub.PMID, pub.PMID, pub.PMID,
+			pub.Title, pub.PMID, pub.Citation, pub.Tags, pub.PMID, pub.PMID, pub.PMID, pub.PMID, pub.PMID, pub.PMID, pub.PMID, pub.PMID, pub.PMID, pub.PMID, pub.PMID, pub.PMID,
 		)
 	}
 	if html == "" {

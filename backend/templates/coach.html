@@ -41,6 +41,8 @@
                 </div>
                 <!-- Delay option status check (Phase 420) -->
                 <span hx-get="/api/clients/config/search-delay/option" hx-trigger="load, change from:select[name=delay_val]" class="text-[8px] text-cyan-400 font-mono flex items-center px-2 bg-navy-900 border border-navy-800 rounded">Option: 300ms</span>
+                <!-- Delay default option values display (Phase 445) -->
+                <span hx-post="/api/clients/config/search-delay/default" hx-trigger="load, change from:select[name=delay_val]" class="text-[8px] text-cyan-400 font-mono flex items-center px-2 bg-navy-900 border border-navy-800 rounded">Default: 300ms</span>
             </div>
             <div class="flex gap-2 justify-between items-center">
                 <div class="flex gap-2">
@@ -582,6 +584,10 @@
                                 </button>
                                 <!-- Save status display tag (Phase 436) -->
                                 <span id="raw-json-save-status" class="text-[8px] text-cyan-400 font-mono">Status: Saved</span>
+                            </div>
+                            <!-- Parser JSON metadata edits history log details checks (Phase 461) -->
+                            <div hx-get="/api/knowsitall/upload-paper/raw-json/logs" hx-trigger="load" class="mt-2 text-[7px] text-slate-550 font-mono">
+                                <span>Loading metadata changes audit logs...</span>
                             </div>
                         </form>
                     </div>
