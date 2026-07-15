@@ -446,11 +446,12 @@ func HandleGetPublicationsList(w http.ResponseWriter, r *http.Request) {
 					<input type="hidden" name="pmid" value="%s">
 					<input type="text" name="comment" placeholder="Add annotation note..." class="w-full px-1 py-0.5 border border-navy-800 rounded bg-navy-950 text-slate-200 text-[8px] focus:outline-none">
 					<button type="submit" class="px-1.5 py-0.5 rounded bg-amber-600 hover:bg-amber-500 text-white text-[8px] font-semibold transition">Post</button>
+					<button hx-put="/api/knowsitall/publication/comment" hx-target="#pub-comment-feedback-%s" hx-swap="innerHTML" hx-include="[name=pmid],[name=comment]" class="px-1 py-0.5 rounded bg-blue-600 hover:bg-blue-500 text-white text-[8px] font-semibold transition">Edit</button>
 					<button hx-delete="/api/knowsitall/publication/comment" hx-target="#pub-comment-feedback-%s" hx-swap="innerHTML" hx-include="[name=pmid]" class="px-1 py-0.5 rounded bg-rose-600 hover:bg-rose-500 text-white text-[8px] font-semibold transition">Delete</button>
 				</form>
 				<div id="pub-comment-feedback-%s" class="text-[8px] text-amber-500 italic mt-0.5"></div>
 			</div>`,
-			pub.Title, pub.PMID, pub.Citation, pub.Tags, pub.PMID, pub.PMID, pub.PMID, pub.PMID, pub.PMID, pub.PMID,
+			pub.Title, pub.PMID, pub.Citation, pub.Tags, pub.PMID, pub.PMID, pub.PMID, pub.PMID, pub.PMID, pub.PMID, pub.PMID, pub.PMID,
 		)
 	}
 	if html == "" {

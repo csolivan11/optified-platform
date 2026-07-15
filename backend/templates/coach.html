@@ -28,7 +28,13 @@
                     <option value="500ms">500ms</option>
                     <option value="1000ms">1000ms</option>
                 </select>
-                <div class="flex items-center justify-center px-2 bg-navy-900 border border-navy-800 rounded text-[8px] text-cyan-400 font-mono whitespace-nowrap min-w-[70px]"
+                <button hx-post="/api/clients/config/search-delay/reset"
+                        hx-target="#search-delay-tag"
+                        hx-swap="innerHTML"
+                        class="px-1.5 py-0.5 rounded bg-rose-600 hover:bg-rose-500 text-white text-[9px] font-semibold transition whitespace-nowrap">
+                    Reset
+                </button>
+                <div id="search-delay-tag" class="flex items-center justify-center px-2 bg-navy-900 border border-navy-800 rounded text-[8px] text-cyan-400 font-mono whitespace-nowrap min-w-[70px]"
                      hx-get="/api/clients/config/search-delay"
                      hx-trigger="load, change from:select[name=delay_val]">
                     <span>Delay: 300ms</span>
@@ -534,18 +540,44 @@
                         <p class="animate-pulse">Loading preview data...</p>
                     </div>
                     <!-- Raw JSON parser viewer (Phase 361) -->
-                    <div class="mt-2 pt-2 border-t border-navy-900" x-data="{ copied: false }">
+                    <!-- Raw JSON parser viewer (Phase 361) -->
+                    <div class="mt-2 pt-2 border-t border-navy-900" x-data="{ copied: false, editing: false }">
                         <div class="flex justify-between items-center mb-1">
                             <span class="text-[8px] font-bold text-slate-500 block uppercase">Raw Parsed JSON layout</span>
-                            <button @click="navigator.clipboard.writeText(document.getElementById('raw-json-content').innerText); copied = true; setTimeout(() => copied = false, 2000)"
-                                    class="px-1.5 py-0.5 rounded bg-navy-900 border border-navy-800 text-[8px] text-slate-400 hover:text-white font-semibold transition flex items-center gap-1">
-                                <span x-show="!copied">Copy JSON</span>
-                                <span x-show="copied" class="text-emerald-400">Copied!</span>
+                            <div class="flex gap-1.5">
+                                <button @click="editing = !editing"
+                                        class="px-1.5 py-0.5 rounded bg-navy-900 border border-navy-800 text-[8px] text-slate-400 hover:text-white font-semibold transition">
+                                    <span x-show="!editing">Edit JSON</span>
+                                    <span x-show="editing" class="text-amber-400 font-bold">Cancel</span>
+                                </button>
+                                <button @click="navigator.clipboard.writeText(document.getElementById('raw-json-content').innerText); copied = true; setTimeout(() => copied = false, 2000)"
+                                        class="px-1.5 py-0.5 rounded bg-navy-900 border border-navy-800 text-[8px] text-slate-400 hover:text-white font-semibold transition flex items-center gap-1">
+                                    <span x-show="!copied">Copy JSON</span>
+                                    <span x-show="copied" class="text-emerald-400">Copied!</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="raw-json-view" x-show="!editing">
+                            <div id="raw-json-content" hx-get="/api/knowsitall/upload-paper/raw-json" hx-trigger="load" hx-swap="innerHTML" class="font-mono text-[8px] bg-slate-900 p-1.5 rounded text-slate-400 overflow-x-auto">
+                                <p class="animate-pulse">Loading raw JSON layout...</p>
+                            </div>
+                        </div>
+                        <form id="raw-json-edit-form" x-show="editing" hx-put="/api/knowsitall/upload-paper/raw-json" hx-target="#raw-json-content" hx-swap="innerHTML" @submit="editing = false" class="space-y-1.5">
+                            <textarea name="raw_json" class="w-full h-32 px-1.5 py-1 font-mono text-[8px] bg-slate-900 border border-navy-800 rounded text-slate-400 focus:outline-none focus:border-cyan-500">{
+  "paper_title": "Carbohydrate Intake Ratios and Glycogen Synthesis during High-Intensity Workouts",
+  "pmid": "35012345",
+  "ingested_at": "2026-07-15T15:36:20Z",
+  "parser_version": "v1.2.0-mock",
+  "metadata": {
+    "author": "Dr. Yerkes Clinic Team",
+    "journal": "Nature Medicine",
+    "impact_factor": 82.9
+  }
+}</textarea>
+                            <button type="submit" class="px-2 py-0.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-[8px] font-semibold transition">
+                                Save Raw Metadata
                             </button>
-                        </div>
-                        <div id="raw-json-content" hx-get="/api/knowsitall/upload-paper/raw-json" hx-trigger="load" hx-swap="innerHTML" class="font-mono text-[8px] bg-slate-900 p-1.5 rounded text-slate-400 overflow-x-auto">
-                            <p class="animate-pulse">Loading raw JSON layout...</p>
-                        </div>
+                        </form>
                     </div>
                 </div>
                 <!-- Paper Ingest parser errors log checklist (Phase 336) -->

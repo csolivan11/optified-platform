@@ -105,11 +105,17 @@
             <form hx-post="/api/profile/timezone" hx-target="#timezone-feedback" hx-swap="innerHTML" class="space-y-4">
                 <div>
                     <label for="timezone" class="block text-xs font-semibold text-slate-400 mb-1">Timezone Profile Preference</label>
-                    <select id="timezone" name="timezone" class="w-full px-3 py-2 border border-navy-800 rounded bg-navy-900 text-slate-200 text-xs focus:ring-cyan-500 focus:border-cyan-500">
-                        <option value="EST">Eastern Standard Time (EST)</option>
-                        <option value="PST">Pacific Standard Time (PST)</option>
-                        <option value="UTC">Coordinated Universal Time (UTC)</option>
-                    </select>
+                    <div class="flex gap-2">
+                        <select id="timezone" name="timezone" class="w-full px-3 py-2 border border-navy-800 rounded bg-navy-900 text-slate-200 text-xs focus:ring-cyan-500 focus:border-cyan-500">
+                            <option value="EST">Eastern Standard Time (EST)</option>
+                            <option value="PST">Pacific Standard Time (PST)</option>
+                            <option value="UTC">Coordinated Universal Time (UTC)</option>
+                        </select>
+                        <div class="flex items-center px-2 bg-navy-900 border border-navy-800 rounded text-[9px] text-cyan-400 font-mono whitespace-nowrap"
+                             hx-get="/api/profile/timezone" hx-trigger="load">
+                            <span>EST</span>
+                        </div>
+                    </div>
                 </div>
                 <button type="submit" class="px-4 py-2 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs transition">
                     Save Timezone Setting
@@ -189,7 +195,11 @@
             <!-- Session Security Locations tracking table (Phase 357) -->
             <div class="mt-4 pt-4 border-t border-navy-900">
                 <div class="flex justify-between items-center mb-2">
-                    <h3 class="text-xs font-semibold text-slate-400 uppercase">Login Locations Log</h3>
+                    <h3 class="text-xs font-semibold text-slate-400 uppercase flex items-center gap-1.5">
+                        Login Locations Log
+                        <!-- Locations count display tag (Phase 407) -->
+                        <span hx-get="/api/profile/security-locations/count" hx-trigger="load, securityLocationsCleared from:body" class="px-1.5 py-0.5 rounded bg-navy-900 border border-navy-800 text-[8px] text-cyan-400 font-mono">2 Active</span>
+                    </h3>
                     <button hx-delete="/api/profile/security-locations"
                             hx-target="#security-locations-list"
                             hx-swap="innerHTML"
@@ -230,9 +240,16 @@
                     <!-- Current receipt preference check (Phase 374) -->
                     <span hx-get="/api/billing/receipts/preference" hx-trigger="load, billingReceiptToggled from:body" class="text-[8px] text-cyan-400 block font-mono">Loading preferences status...</span>
                 </div>
-                <button type="submit" name="auto_receipt" value="true" class="px-2 py-1 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-[9px] font-semibold transition">
-                    Toggle Auto Receipts
-                </button>
+                <div class="flex items-center gap-1.5">
+                    <select name="receipt_format" class="px-1 py-0.5 border border-navy-800 rounded bg-navy-950 text-slate-200 text-[9px] focus:outline-none">
+                        <option value="pdf">PDF Attachment</option>
+                        <option value="html">HTML Email</option>
+                        <option value="text">Plain Text</option>
+                    </select>
+                    <button type="submit" name="auto_receipt" value="true" class="px-2 py-1 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-[9px] font-semibold transition">
+                        Toggle
+                    </button>
+                </div>
             </form>
             <div id="receipt-toggle-feedback" class="mb-2"></div>
 

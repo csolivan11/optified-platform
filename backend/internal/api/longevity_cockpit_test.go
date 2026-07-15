@@ -2197,3 +2197,259 @@ func TestHandleResendConsultationCalendarICS(t *testing.T) {
 		t.Errorf("expected 200 OK, got %v", rr.Code)
 	}
 }
+
+func TestHandleGetProfileTimezone(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/profile/timezone", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetProfileTimezone)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "EST") {
+		t.Errorf("expected timezone name, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetHorvathSimulationGrimAgeHistory(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/longevity/horvath-simulation/grimage-history", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetHorvathSimulationGrimAgeHistory)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "GrimAge Baseline:") {
+		t.Errorf("expected GrimAge simulation logs list, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleResetSearchDelayConfig(t *testing.T) {
+	req, err := http.NewRequest("POST", "/api/clients/config/search-delay/reset", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "coach-id-123", "coach")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleResetSearchDelayConfig)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "300ms") {
+		t.Errorf("expected reset confirmation tag, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleSendGutDiversityAdvicePDFEmail(t *testing.T) {
+	req, err := http.NewRequest("POST", "/api/diagnostics/gut-diversity/advice/pdf/email", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleSendGutDiversityAdvicePDFEmail)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "report emailed successfully") {
+		t.Errorf("expected PDF email dispatch confirmation, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleUpdateBillingReceiptPreference(t *testing.T) {
+	form := url.Values{}
+	form.Set("receipt_format", "pdf")
+
+	req, err := http.NewRequest("POST", "/api/billing/receipts/preference", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleUpdateBillingReceiptPreference)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "PDF") {
+		t.Errorf("expected format confirmation message, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleUpdatePublicationComment(t *testing.T) {
+	form := url.Values{}
+	form.Set("pmid", "35012345")
+	form.Set("comment", "Study methodology is robust.")
+
+	req, err := http.NewRequest("PUT", "/api/knowsitall/publication/comment", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleUpdatePublicationComment)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "methodology is robust") {
+		t.Errorf("expected updated comment response, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetHRVSleepCorrelationYearly(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/wearables/hrv/sleep-correlation/yearly", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetHRVSleepCorrelationYearly)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "<svg") {
+		t.Errorf("expected yearly correlation chart SVG, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetSecurityLocationsCount(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/profile/security-locations/count", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetSecurityLocationsCount)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Active") {
+		t.Errorf("expected locations total count label, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleUpdateGutPhylumAlertThreshold(t *testing.T) {
+	form := url.Values{}
+	form.Set("bact_limit", "45")
+
+	req, err := http.NewRequest("PUT", "/api/diagnostics/gut-diversity/phylum/alert", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleUpdateGutPhylumAlertThreshold)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "limits updated to ratio") {
+		t.Errorf("expected update confirmation message, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleUpdateKnowsItAllParserRawJSONMetadata(t *testing.T) {
+	form := url.Values{}
+	form.Set("raw_json", `{"updated": true}`)
+
+	req, err := http.NewRequest("PUT", "/api/knowsitall/upload-paper/raw-json", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleUpdateKnowsItAllParserRawJSONMetadata)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+}
+
+func TestHandleGetConsultationCalendarInviteStatus(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/consultations/calendar/status", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetConsultationCalendarInviteStatus)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "DELIVERED") {
+		t.Errorf("expected calendar delivery status tag, got %s", rr.Body.String())
+	}
+}
