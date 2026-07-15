@@ -564,6 +564,14 @@
                 <p class="text-[10px] text-slate-500 animate-pulse">Loading DunedinPACE simulation speed...</p>
             </div>
             
+            <!-- GrimAge Simulated Aging Speed Indicator (Phase 368) -->
+            <div class="mt-3 p-3 rounded bg-cyan-950/20 border border-cyan-900/40"
+                 hx-get="/api/longevity/horvath-simulation/grimage"
+                 hx-trigger="load, horvathSimRun from:body"
+                 hx-swap="innerHTML">
+                <p class="text-[10px] text-slate-500 animate-pulse">Loading GrimAge simulation speed...</p>
+            </div>
+            
             <div class="mt-4 border-t border-navy-900 pt-3 flex justify-between items-center mb-2">
                 <h4 class="text-xs font-semibold text-slate-400">Epigenetic Simulation Log History</h4>
                 <a href="/api/longevity/horvath-simulation/delta/export" download class="text-[10px] text-cyan-400 hover:underline">
@@ -846,6 +854,10 @@
                            class="px-1.5 py-0.5 rounded border border-navy-800 bg-navy-900 hover:bg-navy-850 text-[8px] font-semibold text-slate-300 hover:text-white transition">
                             Print Advice
                         </a>
+                        <a href="/api/diagnostics/gut-diversity/advice/pdf" target="_blank"
+                           class="px-1.5 py-0.5 rounded border border-navy-800 bg-navy-900 hover:bg-navy-850 text-[8px] font-semibold text-slate-300 hover:text-white transition">
+                            PDF Export
+                        </a>
                         <button hx-post="/api/diagnostics/gut-diversity/advice/email"
                                 hx-target="#microbiome-advice-container"
                                 hx-swap="afterend"
@@ -874,6 +886,8 @@
                       class="mt-3 p-2 rounded bg-navy-900 border border-navy-850 space-y-2">
                     <div class="flex justify-between items-center text-[9px]">
                         <span class="text-slate-455">Bacteroidetes Upper Limit:</span>
+                        <!-- Configured Limit view (Phase 384) -->
+                        <span hx-get="/api/diagnostics/gut-diversity/phylum/alert" hx-trigger="load, gutPhylaAlertConfigured from:body" class="text-[8px] text-cyan-400 font-mono">Limit: 45%</span>
                         <input type="number" name="bact_limit" value="45" min="20" max="80"
                                class="w-12 px-1 py-0.5 border border-navy-800 rounded bg-navy-950 text-slate-100 text-[10px] focus:outline-none focus:border-cyan-500">
                     </div>
@@ -1226,6 +1240,11 @@
                 <span class="font-semibold block mb-0.5">Zone 3 Aerobic Boundary Monitoring</span>
                 <span>Alarms: Triggered when heart rate exceeds 160 bpm limits.</span>
             </div>
+            <!-- Zone 4 Workout Alert parameters checkbox (Phase 378) -->
+            <div class="mt-2 p-2 rounded bg-red-950/20 border border-red-900/40 text-[9px] text-red-400">
+                <span class="font-semibold block mb-0.5">Zone 4 Threshold Alarm Boundary</span>
+                <span>Alarms: Triggered when heart rate deviates outside 170-185 bpm limits.</span>
+            </div>
 
             <div class="mt-4 border-t border-navy-900 pt-3">
                 <h4 class="text-xs font-semibold text-slate-400 mb-2">Upcoming Scheduled Cardio Sessions</h4>
@@ -1247,6 +1266,14 @@
                 <h4 class="text-xs font-semibold text-slate-400 mb-2">HRV Autonomic Recovery Sleep Correlation</h4>
                 <div hx-get="/api/wearables/hrv/sleep-correlation" hx-trigger="load" class="relative h-24 w-full">
                     <p class="text-[10px] text-slate-500 animate-pulse">Loading sleep correlation statistics...</p>
+                </div>
+            </div>
+
+            <!-- Monthly HRV Sleep Correlation Chart (Phase 380) -->
+            <div class="mt-4 border-t border-navy-900 pt-3">
+                <h4 class="text-xs font-semibold text-slate-400 mb-2">Monthly HRV Sleep Correlation Trend</h4>
+                <div hx-get="/api/wearables/hrv/sleep-correlation/monthly" hx-trigger="load" class="relative h-24 w-full">
+                    <p class="text-[10px] text-slate-500 animate-pulse">Loading monthly sleep correlation statistics...</p>
                 </div>
             </div>
         </div>

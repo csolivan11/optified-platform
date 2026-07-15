@@ -1982,3 +1982,218 @@ func TestHandleCancelConsultationCalendarICS(t *testing.T) {
 		t.Errorf("expected invite cancellation response text, got %s", rr.Body.String())
 	}
 }
+
+func TestHandleDeleteProfileAvatar(t *testing.T) {
+	req, err := http.NewRequest("DELETE", "/api/profile/avatar", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleDeleteProfileAvatar)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "avatar deleted") {
+		t.Errorf("expected avatar delete confirmation, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetHorvathSimulationGrimAge(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/longevity/horvath-simulation/grimage", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetHorvathSimulationGrimAge)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "GrimAge Sim:") {
+		t.Errorf("expected GrimAge simulation stats, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetSearchDelayConfig(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/clients/config/search-delay", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetSearchDelayConfig)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+}
+
+func TestHandlePrintGutDiversityAdvicePDF(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/diagnostics/gut-diversity/advice/pdf", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandlePrintGutDiversityAdvicePDF)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+}
+
+func TestHandleGetBillingReceiptPreference(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/billing/receipts/preference", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetBillingReceiptPreference)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+}
+
+func TestHandleDeletePublicationComment(t *testing.T) {
+	req, err := http.NewRequest("DELETE", "/api/knowsitall/publication/comment", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleDeletePublicationComment)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+}
+
+func TestHandleGetHRVSleepCorrelationMonthly(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/wearables/hrv/sleep-correlation/monthly", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetHRVSleepCorrelationMonthly)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+}
+
+func TestHandleDeleteSecurityLocations(t *testing.T) {
+	req, err := http.NewRequest("DELETE", "/api/profile/security-locations", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleDeleteSecurityLocations)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+}
+
+func TestHandleGetGutPhylumAlertThreshold(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/diagnostics/gut-diversity/phylum/alert", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetGutPhylumAlertThreshold)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+}
+
+func TestHandleUpdateKnowsItAllParserRawJSON(t *testing.T) {
+	req, err := http.NewRequest("POST", "/api/knowsitall/upload-paper/raw-json", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleUpdateKnowsItAllParserRawJSON)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+}
+
+func TestHandleResendConsultationCalendarICS(t *testing.T) {
+	req, err := http.NewRequest("POST", "/api/consultations/calendar/resend", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleResendConsultationCalendarICS)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+}

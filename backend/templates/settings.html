@@ -90,9 +90,15 @@
                     <input type="file" id="avatar" name="avatar" accept="image/*" required
                            class="w-full text-xs text-slate-400 file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-cyan-950 file:text-cyan-400 hover:file:bg-cyan-900 transition">
                 </div>
-                <button type="submit" class="px-4 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs transition">
-                    Upload Avatar Image
-                </button>
+                <div class="flex gap-2">
+                    <button type="submit" class="px-4 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs transition">
+                        Upload Avatar Image
+                    </button>
+                    <button hx-delete="/api/profile/avatar" hx-target="#avatar-feedback" hx-swap="innerHTML"
+                            class="px-4 py-1.5 rounded bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs transition">
+                        Delete Avatar
+                    </button>
+                </div>
                 <div id="avatar-feedback" class="mt-2"></div>
             </form>
 
@@ -182,8 +188,16 @@
 
             <!-- Session Security Locations tracking table (Phase 357) -->
             <div class="mt-4 pt-4 border-t border-navy-900">
-                <h3 class="text-xs font-semibold text-slate-400 mb-2 uppercase">Login Locations Log</h3>
-                <div hx-get="/api/profile/security-locations" hx-trigger="load" hx-swap="innerHTML" class="space-y-1 max-h-32 overflow-y-auto">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-xs font-semibold text-slate-400 uppercase">Login Locations Log</h3>
+                    <button hx-delete="/api/profile/security-locations"
+                            hx-target="#security-locations-list"
+                            hx-swap="innerHTML"
+                            class="px-2 py-0.5 rounded bg-rose-600 hover:bg-rose-500 text-white text-[9px] font-semibold transition">
+                        Clear Log
+                    </button>
+                </div>
+                <div id="security-locations-list" hx-get="/api/profile/security-locations" hx-trigger="load" hx-swap="innerHTML" class="space-y-1 max-h-32 overflow-y-auto">
                     <p class="text-[9px] text-slate-500 animate-pulse">Loading location logs...</p>
                 </div>
             </div>
@@ -213,6 +227,8 @@
                 <div>
                     <span class="text-xs font-semibold text-slate-200 block">Automatic Email Receipts</span>
                     <span class="text-[10px] text-slate-500">Receive copy of payments receipts instantly.</span>
+                    <!-- Current receipt preference check (Phase 374) -->
+                    <span hx-get="/api/billing/receipts/preference" hx-trigger="load, billingReceiptToggled from:body" class="text-[8px] text-cyan-400 block font-mono">Loading preferences status...</span>
                 </div>
                 <button type="submit" name="auto_receipt" value="true" class="px-2 py-1 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-[9px] font-semibold transition">
                     Toggle Auto Receipts

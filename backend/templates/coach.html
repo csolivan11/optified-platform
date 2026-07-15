@@ -22,11 +22,17 @@
                 <select name="delay_val"
                         hx-post="/api/clients/config/search-delay"
                         hx-swap="none"
+                        hx-trigger="change"
                         class="px-1.5 py-0.5 border border-navy-800 rounded bg-navy-950 text-slate-200 text-[9px] focus:outline-none">
                     <option value="300ms">300ms</option>
                     <option value="500ms">500ms</option>
                     <option value="1000ms">1000ms</option>
                 </select>
+                <div class="flex items-center justify-center px-2 bg-navy-900 border border-navy-800 rounded text-[8px] text-cyan-400 font-mono whitespace-nowrap min-w-[70px]"
+                     hx-get="/api/clients/config/search-delay"
+                     hx-trigger="load, change from:select[name=delay_val]">
+                    <span>Delay: 300ms</span>
+                </div>
             </div>
             <div class="flex gap-2 justify-between items-center">
                 <div class="flex gap-2">
@@ -528,9 +534,16 @@
                         <p class="animate-pulse">Loading preview data...</p>
                     </div>
                     <!-- Raw JSON parser viewer (Phase 361) -->
-                    <div class="mt-2 pt-2 border-t border-navy-900">
-                        <span class="text-[8px] font-bold text-slate-500 block uppercase mb-1">Raw Parsed JSON layout</span>
-                        <div hx-get="/api/knowsitall/upload-paper/raw-json" hx-trigger="load" hx-swap="innerHTML" class="font-mono text-[8px] bg-slate-900 p-1.5 rounded text-slate-400 overflow-x-auto">
+                    <div class="mt-2 pt-2 border-t border-navy-900" x-data="{ copied: false }">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[8px] font-bold text-slate-500 block uppercase">Raw Parsed JSON layout</span>
+                            <button @click="navigator.clipboard.writeText(document.getElementById('raw-json-content').innerText); copied = true; setTimeout(() => copied = false, 2000)"
+                                    class="px-1.5 py-0.5 rounded bg-navy-900 border border-navy-800 text-[8px] text-slate-400 hover:text-white font-semibold transition flex items-center gap-1">
+                                <span x-show="!copied">Copy JSON</span>
+                                <span x-show="copied" class="text-emerald-400">Copied!</span>
+                            </button>
+                        </div>
+                        <div id="raw-json-content" hx-get="/api/knowsitall/upload-paper/raw-json" hx-trigger="load" hx-swap="innerHTML" class="font-mono text-[8px] bg-slate-900 p-1.5 rounded text-slate-400 overflow-x-auto">
                             <p class="animate-pulse">Loading raw JSON layout...</p>
                         </div>
                     </div>
