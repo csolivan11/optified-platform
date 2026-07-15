@@ -540,6 +540,14 @@
                 <p class="text-[10px] text-slate-500">Loading bio age trajectory line chart...</p>
             </div>
             
+            <!-- Pace of Aging Gauge Indicator (Phase 293) -->
+            <div class="mt-3 p-3 rounded bg-cyan-950/20 border border-cyan-900/40"
+                 hx-get="/api/longevity/horvath-simulation/pace"
+                 hx-trigger="load, horvathSimRun from:body"
+                 hx-swap="innerHTML">
+                <p class="text-[10px] text-slate-500 animate-pulse">Loading Pace of Aging rate...</p>
+            </div>
+            
             <div class="mt-4 border-t border-navy-900 pt-3 flex justify-between items-center mb-2">
                 <h4 class="text-xs font-semibold text-slate-400">Epigenetic Simulation Log History</h4>
                 <a href="/api/longevity/horvath-simulation/delta/export" download class="text-[10px] text-cyan-400 hover:underline">
@@ -803,6 +811,18 @@
                         Supplements
                     </button>
                 </div>
+                <!-- Microbiome Prebiotic Food Search Engine (Phase 297) -->
+                <div class="mt-3">
+                    <label class="block text-[10px] text-slate-500 uppercase mb-1">Search Food Microbiome Suitability Rank</label>
+                    <input type="text" name="food_query" placeholder="e.g. Garlic, Chicory root..."
+                           hx-get="/api/diagnostics/gut-diversity/foods/search"
+                           hx-trigger="keyup changed delay:300ms"
+                           hx-target="#food-suitability-results"
+                           hx-swap="innerHTML"
+                           class="w-full px-2.5 py-1 border border-navy-800 rounded bg-navy-900 text-slate-200 text-xs focus:outline-none focus:border-cyan-500">
+                    <div id="food-suitability-results" class="mt-2 text-[9px] text-slate-400"></div>
+                </div>
+
                 <div id="microbiome-advice-container" class="mt-2 p-2 rounded bg-navy-955 text-[10px] text-slate-355 border border-navy-850"
                      hx-get="/api/diagnostics/gut-diversity/advice"
                      hx-trigger="load, gutDiversityCalibrated from:body"
@@ -815,6 +835,23 @@
                      hx-swap="innerHTML">
                     <span>Latest Gut Index: <b class="text-slate-100">7.8</b> (Optimal Diversity)</span>
                 </div>
+
+                <!-- Gut Phyla alert rules (Phase 309) -->
+                <form hx-post="/api/diagnostics/gut-diversity/phylum/alert"
+                      hx-target="#phyla-alert-feedback"
+                      hx-swap="innerHTML"
+                      class="mt-3 p-2 rounded bg-navy-900 border border-navy-850 space-y-2">
+                    <div class="flex justify-between items-center text-[9px]">
+                        <span class="text-slate-455">Bacteroidetes Upper Limit:</span>
+                        <input type="number" name="bact_limit" value="45" min="20" max="80"
+                               class="w-12 px-1 py-0.5 border border-navy-800 rounded bg-navy-950 text-slate-100 text-[10px] focus:outline-none focus:border-cyan-500">
+                    </div>
+                    <button type="submit" class="w-full py-1 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-[9px] font-semibold transition">
+                        Configure Phyla Limits
+                    </button>
+                    <div id="phyla-alert-feedback"></div>
+                </form>
+
                 <div class="mt-2 p-2 rounded bg-navy-950 text-[10px] text-slate-355 border border-navy-850 flex justify-between items-center"
                      hx-get="/api/diagnostics/gut-diversity/baseline"
                      hx-trigger="load, gutDiversityCalibrated from:body"
@@ -886,6 +923,7 @@
                 <p class="text-xs text-slate-450 mt-0.5">Real-time daily sync from Oura & Whoop wearables profiles.</p>
             </div>
             <div class="flex items-center gap-3">
+                <span hx-get="/api/wearables/status/badges" hx-trigger="load" hx-swap="outerHTML"></span>
                 <span class="text-xs text-slate-455" x-text="syncStatus">Active Connection</span>
                 <button @click="triggerSync()" :disabled="syncing"
                         class="px-3 py-1.5 rounded border border-navy-800 bg-navy-900 hover:bg-navy-850 text-xs font-semibold text-slate-300 hover:text-white transition">
@@ -966,6 +1004,13 @@
                      hx-swap="innerHTML"
                      class="relative h-32 w-full">
                     <p class="text-[10px] text-slate-500 animate-pulse">Loading HRV trends...</p>
+                </div>
+                <!-- HRV Recovery alerts (Phase 305) -->
+                <div class="mt-3 p-2 rounded bg-cyan-950/20 border border-cyan-900/30 text-[9px]"
+                     hx-get="/api/wearables/hrv/alerts"
+                     hx-trigger="load, wearablesSynced from:body"
+                     hx-swap="innerHTML">
+                    <span class="animate-pulse">Loading recovery metrics...</span>
                 </div>
             </div>
 
@@ -1123,6 +1168,14 @@
                 <h4 class="text-xs font-semibold text-slate-400 mb-2">Upcoming Scheduled Cardio Sessions</h4>
                 <div hx-get="/api/fitness/schedule/list" hx-trigger="load, workoutScheduled from:body" class="space-y-2">
                     <p class="text-[10px] text-slate-500 animate-pulse">Loading upcoming workouts...</p>
+                </div>
+            </div>
+
+            <!-- VO2 Max Trend chart (Phase 303) -->
+            <div class="mt-4 border-t border-navy-900 pt-3">
+                <h4 class="text-xs font-semibold text-slate-400 mb-2">VO2 Max Autonomic Progression Trend</h4>
+                <div hx-get="/api/fitness/vo2max/chart" hx-trigger="load" class="relative h-24 w-full">
+                    <p class="text-[10px] text-slate-500 animate-pulse">Loading VO2 Max trends...</p>
                 </div>
             </div>
         </div>

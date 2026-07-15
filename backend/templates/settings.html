@@ -12,9 +12,12 @@
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <!-- Wearable APIs Token Manager -->
         <div class="rounded-xl border border-navy-850 bg-navy-950 p-6 shadow-md">
-            <h2 class="text-base font-semibold text-slate-100 mb-4 flex items-center gap-2">
-                <span class="h-2 w-2 rounded-full bg-cyan-400"></span>
-                Connected Wearable Services (OAuth2)
+            <h2 class="text-base font-semibold text-slate-100 mb-4 flex items-center justify-between">
+                <span class="flex items-center gap-2">
+                    <span class="h-2 w-2 rounded-full bg-cyan-400"></span>
+                    Connected Wearable Services (OAuth2)
+                </span>
+                <span hx-get="/api/wearables/status/badges" hx-trigger="load" hx-swap="outerHTML"></span>
             </h2>
             <p class="text-xs text-slate-500 mb-4">Connect directly to third-party services via REST API connectors.</p>
 
@@ -122,10 +125,17 @@
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-2 mt-6 border-t border-navy-850 pt-6">
         <!-- User security logs card -->
         <div class="rounded-xl border border-navy-850 bg-navy-950 p-6 shadow-md">
-            <h2 class="text-base font-semibold text-slate-100 mb-4 flex items-center gap-2">
-                <span class="h-2 w-2 rounded-full bg-red-400"></span>
-                Security Activity Ledger
+            <h2 class="text-base font-semibold text-slate-100 mb-4 flex items-center justify-between">
+                <span class="flex items-center gap-2">
+                    <span class="h-2 w-2 rounded-full bg-red-400"></span>
+                    Security Activity Ledger
+                </span>
+                <button hx-post="/api/profile/password/reset" hx-target="#password-reset-feedback" hx-swap="innerHTML"
+                        class="px-2 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white text-[9px] font-semibold transition">
+                    Reset Password
+                </button>
             </h2>
+            <div id="password-reset-feedback" class="mb-2"></div>
             <div hx-get="/api/profile/security-logs" hx-trigger="load" hx-swap="innerHTML" class="space-y-2 max-h-48 overflow-y-auto">
                 <p class="text-xs text-slate-500 animate-pulse">Loading security event logs...</p>
             </div>
@@ -133,10 +143,23 @@
 
         <!-- Invoices history card -->
         <div class="rounded-xl border border-navy-850 bg-navy-950 p-6 shadow-md">
-            <h2 class="text-base font-semibold text-slate-100 mb-4 flex items-center gap-2">
-                <span class="h-2 w-2 rounded-full bg-amber-400"></span>
-                Billing Invoice History
+            <h2 class="text-base font-semibold text-slate-100 mb-4 flex items-center justify-between">
+                <span class="flex items-center gap-2">
+                    <span class="h-2 w-2 rounded-full bg-amber-400"></span>
+                    Billing Invoice History
+                </span>
+                <form hx-post="/api/billing/currency/preference" hx-target="#currency-feedback" hx-swap="innerHTML" class="flex items-center gap-1.5">
+                    <select name="currency" class="px-1.5 py-0.5 border border-navy-800 rounded bg-navy-950 text-slate-200 text-[9px] focus:outline-none">
+                        <option value="USD">USD ($)</option>
+                        <option value="EUR">EUR (€)</option>
+                        <option value="GBP">GBP (£)</option>
+                    </select>
+                    <button type="submit" class="px-2 py-0.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-[9px] font-semibold transition">
+                        Save
+                    </button>
+                </form>
             </h2>
+            <div id="currency-feedback" class="mb-2"></div>
             <div hx-get="/api/billing/invoices/history" hx-trigger="load" hx-swap="innerHTML" class="space-y-2 max-h-48 overflow-y-auto">
                 <p class="text-xs text-slate-500 animate-pulse">Loading invoicing ledger...</p>
             </div>

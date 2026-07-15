@@ -1,4 +1,11 @@
 {{define "content"}}
+<style>
+@media print {
+    body * { visibility: hidden; }
+    #notes-list, #notes-list * { visibility: visible; }
+    #notes-list { position: absolute; left: 0; top: 0; background: white; color: black; }
+}
+</style>
 <div class="grid grid-cols-1 gap-8 lg:grid-cols-3"
      hx-headers='{"X-CSRF-Token": "static_session_csrf_token_value_xyz"}'>
     <!-- Client Pipeline Panel -->
@@ -186,6 +193,10 @@
             <div class="flex justify-between items-center mb-3">
                 <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-450">Clinical / Medical Notes History (PHI)</h3>
                 <div class="flex gap-2">
+                    <a href="/api/clinical-notes/print/pdf" target="_blank"
+                       class="px-2.5 py-1 border border-navy-800 rounded bg-navy-900 hover:bg-navy-850 text-[10px] font-semibold text-slate-355 hover:text-white transition">
+                        Print PDF
+                    </a>
                     <a href="/api/clinical-notes/export/markdown" download
                        class="px-2.5 py-1 border border-navy-800 rounded bg-navy-900 hover:bg-navy-850 text-[10px] font-semibold text-slate-355 hover:text-white transition">
                         Export Markdown
@@ -405,6 +416,11 @@
                            hx-trigger="keyup changed delay:300ms, load"
                            hx-target="#publications-list-container"
                            class="w-24 px-1.5 py-0.5 border border-navy-800 rounded bg-navy-950 text-slate-200 text-[9px] focus:outline-none">
+                    <input type="text" name="author_filter" placeholder="Filter by author..."
+                           hx-get="/api/knowsitall/publications"
+                           hx-trigger="keyup changed delay:300ms"
+                           hx-target="#publications-list-container"
+                           class="w-24 px-1.5 py-0.5 border border-navy-800 rounded bg-navy-950 text-slate-200 text-[9px] focus:outline-none">
                 </div>
                 <div class="space-y-2 max-h-32 overflow-y-auto" id="publications-list-container">
                     <p class="text-[10px] text-slate-500 animate-pulse">Loading publications list...</p>
@@ -472,7 +488,7 @@
                         </div>
                     </div>
                     <button type="submit" class="w-full py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold transition"
-                            onclick="document.getElementById('upload-progress-bar').classList.remove('hidden');">
+                            onclick="document.getElementById('upload-progress-bar').classList.remove('hidden'); document.getElementById('paper-preview-container').classList.remove('hidden');">
                         Upload and Parse Paper
                     </button>
                     <!-- Progress Loader (Phase 286) -->
@@ -487,6 +503,13 @@
                     </div>
                 </form>
                 <div id="paper-uploader-feedback" class="mt-2"></div>
+                <!-- Paper Ingest preview details panel (Phase 311) -->
+                <div id="paper-preview-container" class="mt-3 p-3 rounded bg-navy-950/80 border border-navy-900 hidden">
+                    <span class="font-bold text-[10px] text-cyan-400 block mb-1">Ingested Publication Preview Details</span>
+                    <div hx-get="/api/knowsitall/upload-paper/preview" hx-trigger="load" hx-swap="innerHTML" class="text-[9px] text-slate-355 space-y-1">
+                        <p class="animate-pulse">Loading preview data...</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
