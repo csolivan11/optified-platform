@@ -122,6 +122,11 @@ func ConfigureRouter() *chi.Mux {
 			r.Get("/diagnostics/gut-diversity/advice", HandleGetGutDiversityAdvice)
 			r.Get("/diagnostics/gut-diversity/phylum", HandleGetGutPhylumBreakdown)
 			r.Get("/diagnostics/gut-diversity/alerts", HandleGetGutDiversityAlerts)
+			r.Get("/diagnostics/reports/normalized", HandleGetNormalizedReports)
+			r.Post("/diagnostics/chat", HandleDiagnosticsChat)
+			r.Post("/clinical-notes/draft-assistant", HandleClinicalNotesDraftAssistant)
+			r.Post("/clinical-notes/approve", HandleApproveClinicalNotesDraft)
+			r.Get("/clinical-notes/spotlight", HandleGetClinicalNotesSpotlight)
 		})
 	})
 

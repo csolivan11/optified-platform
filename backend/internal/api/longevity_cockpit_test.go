@@ -755,3 +755,128 @@ func TestHandleGetGutDiversityAlerts(t *testing.T) {
 		t.Errorf("expected clinical alerts stats content, got %s", rr.Body.String())
 	}
 }
+
+func TestHandleGetNormalizedReports(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/diagnostics/reports/normalized", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetNormalizedReports)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Genova GI Effects Gut Panel") {
+		t.Errorf("expected Genova lab report, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleDiagnosticsChat(t *testing.T) {
+	form := url.Values{}
+	form.Set("question", "Tell me about my biological age delta?")
+
+	req, err := http.NewRequest("POST", "/api/diagnostics/chat", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleDiagnosticsChat)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "biological offset delta") {
+		t.Errorf("expected grounded response, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleClinicalNotesDraftAssistant(t *testing.T) {
+	form := url.Values{}
+	form.Set("client_id", "client-id-123")
+	form.Set("rough_notes", "apoB level is fine at 60")
+
+	req, err := http.NewRequest("POST", "/api/clinical-notes/draft-assistant", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "coach-id-123", "coach")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleClinicalNotesDraftAssistant)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Swiss Study Cite Attached") {
+		t.Errorf("expected draft assistant expansions, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleApproveClinicalNotesDraft(t *testing.T) {
+	form := url.Values{}
+	form.Set("client_id", "client-id-123")
+	form.Set("approved_content", "Patient shows optimal ApoB recovery.")
+	form.Set("citation_pmid", "99012345")
+
+	req, err := http.NewRequest("POST", "/api/clinical-notes/approve", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "coach-id-123", "coach")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleApproveClinicalNotesDraft)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Published") {
+		t.Errorf("expected publication approval confirmation, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetClinicalNotesSpotlight(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/clinical-notes/spotlight", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetClinicalNotesSpotlight)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Swiss Sports Nutrition Hub") {
+		t.Errorf("expected clinical notes spotlight details, got %s", rr.Body.String())
+	}
+}

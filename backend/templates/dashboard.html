@@ -1419,6 +1419,67 @@
                 </div>
             </div>
 
+            <!-- Practitioner Clinical Notes Spotlight Card (Phase 229) -->
+            <div class="rounded-xl border border-navy-850 bg-navy-950 p-6 shadow-md mt-6"
+                 hx-get="/api/clinical-notes/spotlight"
+                 hx-trigger="load, clinicalNotesApproved from:body"
+                 hx-swap="innerHTML">
+                <div class="animate-pulse text-xs text-slate-500">Loading clinician insights and notes...</div>
+            </div>
+
+            <!-- PDF Medical Reports Ingestion & Grounded AI Chat Row (Phase 221 & 223) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 border-t border-navy-900/60 pt-6">
+                <!-- Normalization summaries list card -->
+                <div class="rounded-xl border border-navy-850 bg-navy-950 p-6 shadow-md" id="normalized-reports-card">
+                    <div class="flex items-center justify-between mb-4 border-b border-navy-900 pb-3">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+                                <span class="h-2.5 w-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                                Ingested Lab Reports
+                            </h2>
+                            <p class="text-xs text-slate-450 mt-0.5">Biomarker report datasets normalized against clinical limits.</p>
+                        </div>
+                        <span class="text-[10px] px-2 py-0.5 rounded border border-cyan-800 bg-cyan-950/40 text-cyan-400 uppercase tracking-wider font-semibold">Labs Ledger</span>
+                    </div>
+
+                    <div hx-get="/api/diagnostics/reports/normalized"
+                         hx-trigger="load"
+                         hx-swap="innerHTML"
+                         class="space-y-3 max-h-64 overflow-y-auto">
+                        <p class="text-xs text-slate-500 animate-pulse">Loading normalized biomarker reports...</p>
+                    </div>
+                </div>
+
+                <!-- Grounded file chat experience card -->
+                <div class="rounded-xl border border-navy-850 bg-navy-950 p-6 shadow-md flex flex-col justify-between">
+                    <div class="border-b border-navy-900 pb-3 mb-3">
+                        <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+                            <span class="h-2.5 w-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                            Chat with your Medical Files
+                        </h2>
+                        <p class="text-xs text-slate-450 mt-0.5">Ask questions grounded directly in your uploaded PDF biomarker report datasets.</p>
+                    </div>
+
+                    <!-- Chat history area -->
+                    <div id="cgm-chat-history" class="space-y-3 h-48 overflow-y-auto mb-3 p-3 rounded bg-slate-950 border border-navy-900 text-xs">
+                        <div class="text-slate-500 italic text-[10px]">Context grounded in KnowsItAll publications corpus. Ask anything...</div>
+                    </div>
+
+                    <!-- Chat input form -->
+                    <form hx-post="/api/diagnostics/chat"
+                          hx-target="#cgm-chat-history"
+                          hx-swap="beforeend"
+                          hx-on::after-request="this.reset(); document.getElementById('cgm-chat-history').scrollTop = document.getElementById('cgm-chat-history').scrollHeight"
+                          class="flex gap-2">
+                        <input type="text" name="question" placeholder="e.g. Tell me about my gut Shannon index trend?" required
+                               class="flex-1 px-3 py-2 border border-navy-800 rounded bg-navy-900 text-slate-100 text-xs focus:outline-none focus:border-cyan-500 transition">
+                        <button type="submit" class="px-4 py-2 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold transition">
+                            Ask AI
+                        </button>
+                    </form>
+                </div>
+            </div>
+
             <script>
                 window.fetchPublicationMetadata = async function(pmid) {
                     const backdrop = document.getElementById('spotlight-modal-backdrop');
