@@ -1,0 +1,124 @@
+{
+  "pitch_deck": [
+    {
+      "slide": 1,
+      "title": "Optified Platform",
+      "subtitle": "The Operating System for Longevity Medicine",
+      "bullets": [
+        "Corey Solivan, Founder & CEO",
+        "Contact: corey@optified.dev"
+      ],
+      "speaker_notes": "Hello, I’m Corey Solivan, founder of Optified. Today I’ll show you how we are building the digital infrastructure for the fastest-growing sector in modern healthcare: preventative longevity medicine."
+    },
+    {
+      "slide": 2,
+      "title": "The Longevity Paradox",
+      "subtitle": "Administrative Scaling limits Concierge Clinics",
+      "bullets": [
+        "Longevity medicine requires analyzing whole-genome sequencing, gut microbiomes, and daily wearables.",
+        "Clinicians spend 4 to 6 hours per patient manually copy-pasting numbers from PDFs into spreadsheets.",
+        "Admin overload restricts premium clinic sizes to under 40 active clients per practitioner."
+      ],
+      "speaker_notes": "Longevity medicine is growing rapidly, but it is bottlenecked by data fragmentation. Clinicians spend hours manually parsing reports instead of treating patients. This keeps clinics small and prevents them from scaling."
+    },
+    {
+      "slide": 3,
+      "title": "The Optified Solution",
+      "subtitle": "Defensive Clinical Infrastructure",
+      "bullets": [
+        "Automated Lab Ingestion: Standardizes lab report PDFs (Genova, Microbiomix, Quest) into clean database schemas within seconds.",
+        "Clinician Cockpit: Provides visual sleep stages, dynamic CGM curves, and an interactive body map linking genetics directly to protocols.",
+        "KnowsItAll RAG Engine: Grounded AI chat referencing top global journals (NEJM, Nature Medicine) to justify clinical observations."
+      ],
+      "speaker_notes": "Optified is the first software platform designed specifically for longevity clinics. We automate lab report parsing, centralize wearable data, and provide an AI assistant to verify clinical decisions using scientific literature."
+    },
+    {
+      "slide": 4,
+      "title": "Inside the Clinician Cockpit",
+      "subtitle": "Centralized Biometric Feeds",
+      "bullets": [
+        "Biometric Integrations: Dynamic sleep curves (Deep, REM, Light) and continuous glucose monitoring curves (Time-in-Range).",
+        "Interactive Body Map: Tooltips showing active gene-protocol mapping (e.g. MTHFR polymorphism indicating active L-5-MTHF supplement schedules).",
+        "Secure Telehealth Interface: Daily.co secure video rooms launched in one click for real-time reviews."
+      ],
+      "speaker_notes": "This is our clinician cockpit. Within a single view, a practitioner can see continuous glucose curves, sleep patterns, and interactive genetic advice. This centralizes patient data and saves hours of manual work."
+    },
+    {
+      "slide": 5,
+      "title": "Under the Hood: Security & Compliance",
+      "subtitle": "FedRAMP Moderate & HIPAA Ready",
+      "bullets": [
+        "Data Security: Full AES-256-GCM encryption at rest, TLS 1.3 in transit, and row-level database separation.",
+        "FedRAMP & HIPAA Ready: Engineered to align with the FedRAMP Moderate Baseline (NIST SP 800-53 Rev 5) utilizing GKE private endpoint cluster infrastructure, Cloud Armor WAF policies, and Customer-Managed KMS keys.",
+        "Data Integrity: Clinicians sign clinical observations using HMAC-SHA256 signatures to create a secure audit log.",
+        "Continuous Monitoring: Real-time log streaming to SIEM pipelines (Chronicle/Splunk) and container scan validation."
+      ],
+      "speaker_notes": "Because we handle PHI, security is our priority. Our platform is built from the ground up to support FedRAMP Moderate and HIPAA requirements. We enforce row-level tenant isolation, sign notes with HMAC signatures to prevent tampering, and protect our APIs with Cloud Armor."
+    },
+    {
+      "slide": 6,
+      "title": "The Ask & Use of Funds",
+      "subtitle": "Targeting $2.5M Seed Round",
+      "bullets": [
+        "The Request: $2.5M Seed Round to accelerate GTM scaling and automate lab integration pipelines.",
+        "50% ($1.25M) Engineering & Product: GKE cluster expansions, Quest/LabCorp API bridges.",
+        "30% ($750K) Go-To-Market: Concierge medicine outreach, clinical sales.",
+        "20% ($500K) Compliance & Audits: SOC2 Type II audits, HIPAA infrastructure."
+      ],
+      "speaker_notes": "We are raising $2.5 Million to scale our team, build direct lab API bridges, and expand our sales footprint. We invite you to join us in building the digital infrastructure for the future of medicine."
+    }
+  ],
+  "business_plan": {
+    "summary": "Optified is the premier enterprise software-as-a-service (SaaS) platform designed specifically for private, high-performance longevity clinics and concierge wellness practitioners. Modern longevity medicine has shifted healthcare from a reactive, disease-focused model to a proactive, bio-marker-driven optimization strategy. However, clinical teams are currently overwhelmed by the manual parsing, integration, and analysis of disparate patient multi-omic datasets—including whole-genome sequencing (WGS), blood chemistry panel PDFs, gut microbiome analyses, and real-time biometric feeds from wearables (Oura, Whoop, Apple Watch).",
+    "architecture": "The Optified Platform leverages a highly efficient, type-safe stack designed for sub-millisecond execution speeds, minimal container footprint, and robust horizontal scaling. It utilizes Go standard library on the backend with a PostgreSQL/Supabase database core, delivering HTML fragments dynamically with HTMX and Alpine.js.",
+    "compliance": "All Protected Health Information (PHI) is encrypted at rest using AES-256-GCM. In transit, data is secured using TLS 1.3. Multitenant database isolation is strictly enforced via Row Level Security (RLS) policies at the PostgreSQL database level, preventing cross-tenant leaks. Our infrastructure is fully aligned with the FedRAMP Moderate Baseline (NIST SP 800-53 Rev 5), featuring private GKE Autopilot clusters, Cloud Armor WAF policies, Customer-Managed Encryption Keys (CMEK) via Cloud KMS, and real-time log streaming (SIEM integration)."
+  },
+  "roadmap": {
+    "past": [
+      "Core Foundation: Go standard library core, HTMX + Alpine dynamic frontends, PostgreSQL managed schema definitions, and secure cookie session overrides.",
+      "Biomarkers Ingestion: Genova Diagnostics, Microbiomix, and PNOĒ lab PDF parsers converting text columns into indexed SQL records."
+    ],
+    "recent": [
+      "Epigenetic Age & DunedinPACE: Epigenetic clock simulations and DunedinPACE simulated speed history search logs.",
+      "Gut Microbiome Diversity: Built Shannon diversity index advice print target verification and resets logs queries.",
+      "Cardio Alerts & HRV: Enforced training session Zone 1 warnings alerts log searches and yearly HRV sleep correlation trend line hover logs.",
+      "Infrastructure Security: Aligned architecture to the FedRAMP Moderate Baseline (NIST SP 800-53 Rev 5), featuring private GKE Autopilot clusters, Cloud Armor WAF protection, and Customer-Managed KMS Keys (CMEK)."
+    ],
+    "future": [
+      "Quest & LabCorp Direct API Bridges (Q4 2026): Direct API integrations to fetch diagnostic results, eliminating PDF uploads.",
+      "FedRAMP Moderate Track (Q4 2026): Finalize C3PAO meeting, submit System Security Plan (SSP), and obtain FedRAMP Moderate Authorization.",
+      "Automated Pharmacy Dropshipping APIs (Q1 2027): Connect clinician protocols to Thorne and Fullscript APIs.",
+      "SOC2 Type II Audit & Certification (Q2 2027): Establish formal security processes and run quarterly penetration tests."
+    ]
+  },
+  "forecast": [
+    {"metric": "Clinician Seats", "y1": "200", "y2": "600", "y3": "1,200", "y4": "2,800", "y5": "5,000"},
+    {"metric": "Active Client Profiles", "y1": "2,000", "y2": "7,500", "y3": "15,000", "y4": "45,000", "y5": "80,000"},
+    {"metric": "SaaS Revenue ($)", "y1": "$477,600", "y2": "$1,432,800", "y3": "$2,865,600", "y4": "$6,686,400", "y5": "$11,940,000", "highlight": true},
+    {"metric": "Client Portal Revenue ($)", "y1": "$456,000", "y2": "$1,710,000", "y3": "$3,420,000", "y4": "$10,260,000", "y5": "$18,240,000", "highlight": true},
+    {"metric": "Affiliate Commissions ($)", "y1": "$80,000", "y2": "$300,000", "y3": "$600,000", "y4": "$1,800,000", "y5": "$3,200,000"},
+    {"metric": "Total Revenue ($)", "y1": "$1,013,600", "y2": "$3,442,800", "y3": "$6,885,600", "y4": "$18,746,400", "y5": "$33,380,000", "highlight": true, "focus": true},
+    {"metric": "Gross Profit ($)", "y1": "$851,424", "y2": "$2,891,952", "y3": "$5,783,904", "y4": "$15,746,976", "y5": "$28,039,200"},
+    {"metric": "Gross Margin (%)", "y1": "84.0%", "y2": "84.0%", "y3": "84.0%", "y4": "84.0%", "y5": "84.0%"},
+    {"metric": "EBITDA ($)", "y1": "$201,424", "y2": "$1,391,952", "y3": "$3,283,904", "y4": "$11,246,976", "y5": "$20,039,200", "highlight": true},
+    {"metric": "EBITDA Margin (%)", "y1": "19.9%", "y2": "40.4%", "y3": "47.7%", "y4": "60.0%", "y5": "60.0%"},
+    {"metric": "LTV:CAC Ratio", "y1": "10.7", "y2": "13.7", "y3": "17.2", "y4": "20.7", "y5": "24.0"}
+  ],
+  "gtm": {
+    "tiers": [
+      "Standard Seat: $199/month per clinician. Includes core ingestion pipelines and KnowsItAll assistant.",
+      "Concierge Clinic Tier: $499/month (up to 5 clinician seats). Includes custom branding and GKE hosting.",
+      "Enterprise Health System Tier: Custom pricing, offering dedicated databases and SSO integration."
+    ],
+    "strategy": "Optified targets cash-paying premium clinics located in wealthy metro hubs (San Francisco, London, Zurich, Tokyo) with direct B2B outbound sales. In addition, API partnerships with diagnostics labs (Genova, Quest) allow bundling Optified licenses directly with testing kit sales."
+  },
+  "staffing": [
+    "Bioinformatics Lead (Q3 2026): Maintain genomic variant parsing logic and expand pipeline support for diverse lab providers ($160K - $190K base).",
+    "Senior Backend Security Engineer (Q4 2026): Maintain VPC Service Controls, GKE Autopilot cluster configurations, Cloud Armor WAF policies, SIEM logging pipelines, and manage FedRAMP Moderate and SOC2 compliance audits ($150K - $175K base).",
+    "Clinical Safety Officer (Q4 2026): Oversee medical accuracy of KnowsItAll recommendations ($140K - $160K base)."
+  ],
+  "adoption": {
+    "onboarding": "Engagement begins with standard intake questionnaires and OAuth connections to patient wearables (Oura, Whoop, Apple Health) to populate initial baseline metrics immediately.",
+    "compliance": "Patients log daily protocol compliance (supplements, workouts) on a visual compliance calendar. If anomalous telemetry is recorded (e.g. sustained glucose spikes), the patient is prompted to book a telehealth video consultation using our integrated, secure Daily.co video widgets."
+  }
+}

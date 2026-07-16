@@ -114,7 +114,7 @@
 
         .sidebar-footer {
             margin-top: auto;
-            border-t: 1px solid var(--card-border);
+            border-top: 1px solid var(--card-border);
             padding-top: 1rem;
             font-size: 0.7rem;
             color: var(--text-dim);
@@ -257,6 +257,15 @@
             font-weight: 600;
         }
 
+        .highlight-row {
+            background-color: rgba(0, 240, 255, 0.03);
+        }
+
+        .focus-row {
+            background-color: rgba(0, 240, 255, 0.08) !important;
+            font-weight: 700;
+        }
+
         /* ─── Pitch Deck Slideshow ───────────────────────────────── */
         .slide-container {
             display: flex;
@@ -324,7 +333,19 @@
         }
     </style>
 </head>
-<body x-data="{ activeTab: 'pitch' }">
+<body x-data="{ 
+    activeTab: 'pitch', 
+    payload: null,
+    currentSlide: 0,
+    async init() {
+        try {
+            const res = await fetch('./payload.json');
+            this.payload = await res.json();
+        } catch (e) {
+            console.error('Failed to load data room payload:', e);
+        }
+    }
+}">
 
     <!-- ─── Sidebar Navigation ────────────────────────────────── -->
     <div class="sidebar">
@@ -335,25 +356,25 @@
         </div>
 
         <nav class="nav-menu">
-            <button class="nav-item" :class="{ 'active': activeTab === 'pitch' }" @click="activeTab = 'pitch'">
+            <button id="nav-btn-pitch" class="nav-item" :class="{ 'active': activeTab === 'pitch' }" @click="activeTab = 'pitch'">
                 Pitch Deck <span class="text-dim">01</span>
             </button>
-            <button class="nav-item" :class="{ 'active': activeTab === 'business' }" @click="activeTab = 'business'">
+            <button id="nav-btn-business" class="nav-item" :class="{ 'active': activeTab === 'business' }" @click="activeTab = 'business'">
                 Business Plan <span class="text-dim">02</span>
             </button>
-            <button class="nav-item" :class="{ 'active': activeTab === 'roadmap' }" @click="activeTab = 'roadmap'">
+            <button id="nav-btn-roadmap" class="nav-item" :class="{ 'active': activeTab === 'roadmap' }" @click="activeTab = 'roadmap'">
                 Roadmap <span class="text-dim">03</span>
             </button>
-            <button class="nav-item" :class="{ 'active': activeTab === 'forecast' }" @click="activeTab = 'forecast'">
+            <button id="nav-btn-forecast" class="nav-item" :class="{ 'active': activeTab === 'forecast' }" @click="activeTab = 'forecast'">
                 Financial Forecast <span class="text-dim">04</span>
             </button>
-            <button class="nav-item" :class="{ 'active': activeTab === 'gtm' }" @click="activeTab = 'gtm'">
+            <button id="nav-btn-gtm" class="nav-item" :class="{ 'active': activeTab === 'gtm' }" @click="activeTab = 'gtm'">
                 Go-To-Market <span class="text-dim">05</span>
             </button>
-            <button class="nav-item" :class="{ 'active': activeTab === 'staffing' }" @click="activeTab = 'staffing'">
+            <button id="nav-btn-staffing" class="nav-item" :class="{ 'active': activeTab === 'staffing' }" @click="activeTab = 'staffing'">
                 Staffing Plan <span class="text-dim">06</span>
             </button>
-            <button class="nav-item" :class="{ 'active': activeTab === 'adoption' }" @click="activeTab = 'adoption'">
+            <button id="nav-btn-adoption" class="nav-item" :class="{ 'active': activeTab === 'adoption' }" @click="activeTab = 'adoption'">
                 User Adoption <span class="text-dim">07</span>
             </button>
         </nav>
@@ -377,294 +398,157 @@
                 <h1 x-show="activeTab === 'adoption'">User Adoption & Engagement</h1>
                 <p>Optified Platform — Secure Infrastructure for Multi-Omic Longevity Clinics</p>
             </div>
-            <span class="badge-compliance">FedRAMP Moderate & HIPAA Ready</span>
+            <span id="compliance-badge" class="badge-compliance">FedRAMP Moderate & HIPAA Ready</span>
         </div>
 
-        <!-- ─── Tab Content Panels ────────────────────────────────── -->
-        
-        <!-- PITCH DECK TAB -->
-        <div class="card" x-show="activeTab === 'pitch'" x-data="{ currentSlide: 1, maxSlides: 6 }">
-            <h2>Venture Pitch Slideshow</h2>
-            <div class="slide-container">
-                <!-- Slide 1 -->
-                <div class="slide-card" x-show="currentSlide === 1">
-                    <span class="slide-badge">Slide 01/06</span>
-                    <h3 style="font-size: 1.8rem; font-weight: 800; color: #fff;">Optified Platform</h3>
-                    <p style="font-size: 1.1rem; color: var(--accent-cyan);">The Operating System for Longevity Medicine</p>
-                    <p style="margin-top: 1rem; font-size: 0.85rem; font-family: var(--font-mono);">Corey Solivan, Founder & CEO | corey@optified.dev</p>
-                    <div class="speaker-notes">
-                        <b>Speaker Notes:</b> Hello, I’m Corey Solivan, founder of Optified. Today I’ll show you how we are building the digital infrastructure for the fastest-growing sector in modern healthcare: preventative longevity medicine.
+        <!-- Loading State -->
+        <template x-if="!payload">
+            <div class="card" style="text-align: center; padding: 4rem;">
+                <p style="color: var(--accent-cyan); font-family: var(--font-mono); font-weight: 600; font-size: 1.1rem; animate: pulse 1.5s infinite;">
+                    Initializing Secure Compliance Data Room...
+                </p>
+            </div>
+        </template>
+
+        <!-- Tab Content Panels -->
+        <template x-if="payload">
+            <div>
+                <!-- PITCH DECK TAB -->
+                <div class="card" x-show="activeTab === 'pitch'">
+                    <h2>Venture Pitch Slideshow</h2>
+                    <div class="slide-container">
+                        <div class="slide-card">
+                            <span class="slide-badge" x-text="`Slide 0${payload.pitch_deck[currentSlide].slide}/0${payload.pitch_deck.length}`"></span>
+                            <h3 id="slide-title" style="font-size: 1.8rem; font-weight: 800; color: #fff;" x-text="payload.pitch_deck[currentSlide].title"></h3>
+                            <p id="slide-subtitle" style="font-size: 1.1rem; color: var(--accent-cyan);" x-text="payload.pitch_deck[currentSlide].subtitle"></p>
+                            
+                            <ul style="margin-top: 1rem;">
+                                <template x-for="bullet in payload.pitch_deck[currentSlide].bullets">
+                                    <li x-text="bullet"></li>
+                                </template>
+                            </ul>
+
+                            <div class="speaker-notes">
+                                <b>Speaker Notes:</b> <span id="slide-speaker-notes" x-text="payload.pitch_deck[currentSlide].speaker_notes"></span>
+                            </div>
+                        </div>
+
+                        <!-- Controls -->
+                        <div class="slide-controls">
+                            <button id="btn-prev-slide" class="btn-control" @click="currentSlide = Math.max(0, currentSlide - 1)" :disabled="currentSlide === 0">Previous</button>
+                            <span style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-secondary);" x-text="`Slide ${currentSlide + 1} of ${payload.pitch_deck.length}`"></span>
+                            <button id="btn-next-slide" class="btn-control" @click="currentSlide = Math.min(payload.pitch_deck.length - 1, currentSlide + 1)" :disabled="currentSlide === payload.pitch_deck.length - 1">Next</button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Slide 2 -->
-                <div class="slide-card" x-show="currentSlide === 2">
-                    <span class="slide-badge">Slide 02/06</span>
-                    <h3>The Longevity Paradox</h3>
+                <!-- BUSINESS PLAN TAB -->
+                <div class="card" x-show="activeTab === 'business'">
+                    <h2>Executive Business Plan</h2>
+                    <h3>1. Executive Summary</h3>
+                    <p x-text="payload.business_plan.summary"></p>
+
+                    <h3>2. Product and Technology Architecture</h3>
+                    <p x-text="payload.business_plan.architecture"></p>
+
+                    <h3>3. Regulatory, Security, and Compliance Strategy</h3>
+                    <p x-text="payload.business_plan.compliance"></p>
+                </div>
+
+                <!-- ROADMAP TAB -->
+                <div class="card" x-show="activeTab === 'roadmap'">
+                    <h2>Technology & Development Roadmap</h2>
+                    <h3>1. Past Milestones</h3>
                     <ul>
-                        <li>Longevity medicine requires analyzing whole-genome sequencing, gut microbiomes, and daily wearables telemetry.</li>
-                        <li>Clinicians spend <b>4 to 6 hours per patient</b> manually copy-pasting numbers from PDFs into spreadsheets.</li>
-                        <li>Admin overload restricts premium clinic sizes to under 40 active clients per practitioner.</li>
+                        <template x-for="item in payload.roadmap.past">
+                            <li x-text="item"></li>
+                        </template>
                     </ul>
-                    <div class="speaker-notes">
-                        <b>Speaker Notes:</b> Longevity medicine is growing rapidly, but it is bottlenecked by data fragmentation. Clinicians spend hours manually parsing reports instead of treating patients. This keeps clinics small and prevents them from scaling.
-                    </div>
-                </div>
 
-                <!-- Slide 3 -->
-                <div class="slide-card" x-show="currentSlide === 3">
-                    <span class="slide-badge">Slide 03/06</span>
-                    <h3>The Optified Solution</h3>
+                    <h3>2. Recent Milestones</h3>
                     <ul>
-                        <li><b>Automated Lab Ingestion:</b> Standardizes lab report PDFs (Genova, Microbiomix, Quest) into clean database schemas within seconds.</li>
-                        <li><b>Clinician Cockpit:</b> Provides visual sleep stages, dynamic CGM curves, and an interactive body map linking genetics directly to protocols.</li>
-                        <li><b>KnowsItAll RAG Engine:</b> Grounded AI chat referencing top global journals (NEJM, Nature Medicine) to justify clinical observations.</li>
+                        <template x-for="item in payload.roadmap.recent">
+                            <li x-text="item"></li>
+                        </template>
                     </ul>
-                    <div class="speaker-notes">
-                        <b>Speaker Notes:</b> Optified is the first software platform designed specifically for longevity clinics. We automate lab report parsing, centralize wearable data, and provide an AI assistant to verify clinical decisions using scientific literature.
-                    </div>
-                </div>
 
-                <!-- Slide 4 -->
-                <div class="slide-card" x-show="currentSlide === 4">
-                    <span class="slide-badge">Slide 04/06</span>
-                    <h3>Inside the Clinician Cockpit</h3>
+                    <h3>3. Next Milestones</h3>
                     <ul>
-                        <li><b>Biometric Integrations:</b> Dynamic sleep curves (Deep, REM, Light) and continuous glucose monitoring curves (Time-in-Range).</li>
-                        <li><b>Interactive Body Map:</b> Tooltips showing active gene-protocol mapping (e.g. <i>MTHFR</i> polymorphism indicating active L-5-MTHF supplement schedules).</li>
-                        <li><b>Secure Telehealth Interface:</b> Daily.co secure video rooms launched in one click for real-time reviews.</li>
+                        <template x-for="item in payload.roadmap.future">
+                            <li x-text="item"></li>
+                        </template>
                     </ul>
-                    <div class="speaker-notes">
-                        <b>Speaker Notes:</b> This is our clinician cockpit. Within a single view, a practitioner can see continuous glucose curves, sleep patterns, and interactive genetic advice. This centralizes patient data and saves hours of manual work.
+                </div>
+
+                <!-- FINANCIAL FORECAST TAB -->
+                <div class="card" x-show="activeTab === 'forecast'">
+                    <h2>5-Year Financial & Margin Projection</h2>
+                    <p>Optified expects to maintain an <b>84% Gross Margin</b> on recurring software licenses. GKE infrastructure costs scale linearly with the number of active clinics.</p>
+                    
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Metric</th>
+                                    <th>Year 1</th>
+                                    <th>Year 2</th>
+                                    <th>Year 3</th>
+                                    <th>Year 4</th>
+                                    <th>Year 5</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="row in payload.forecast">
+                                    <tr :class="{ 'highlight-row': row.highlight, 'focus-row': row.focus }">
+                                        <td :class="{ 'text-accent-cyan': row.highlight }" x-text="row.metric"></td>
+                                        <td x-text="row.y1"></td>
+                                        <td x-text="row.y2"></td>
+                                        <td x-text="row.y3"></td>
+                                        <td x-text="row.y4"></td>
+                                        <td x-text="row.y5"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
-                <!-- Slide 5 -->
-                <div class="slide-card" x-show="currentSlide === 5">
-                    <span class="slide-badge">Slide 05/06</span>
-                    <h3>Under the Hood: Security & Compliance</h3>
+                <!-- GO-TO-MARKET TAB -->
+                <div class="card" x-show="activeTab === 'gtm'">
+                    <h2>Go-To-Market & Revenue Tiers</h2>
+                    <h3>1. SaaS Tiers & Subscription Structure</h3>
                     <ul>
-                        <li><b>Data Security:</b> Full AES-256-GCM encryption at rest, TLS 1.3 in transit, and row-level database separation.</li>
-                        <li><b>FedRAMP & HIPAA Ready:</b> Engineered to align with the **FedRAMP Moderate Baseline (NIST SP 800-53 Rev 5)** utilizing GKE private endpoint cluster infrastructure, Cloud Armor WAF policies, and Customer-Managed KMS keys.</li>
-                        <li><b>Data Integrity:</b> Clinicians sign clinical observations using HMAC-SHA256 signatures to create a secure audit log.</li>
-                        <li><b>Continuous Monitoring:</b> Real-time log streaming to SIEM pipelines (Chronicle/Splunk) and container scan validation.</li>
+                        <template x-for="tier in payload.gtm.tiers">
+                            <li x-text="tier"></li>
+                        </template>
                     </ul>
-                    <div class="speaker-notes">
-                        <b>Speaker Notes:</b> Because we handle PHI, security is our priority. Our platform is built from the ground up to support FedRAMP Moderate and HIPAA requirements. We enforce row-level tenant isolation, sign notes with HMAC signatures to prevent tampering, and protect our APIs with Cloud Armor.
-                    </div>
+
+                    <h3>2. Channel & Sales Strategy</h3>
+                    <p x-text="payload.gtm.strategy"></p>
                 </div>
 
-                <!-- Slide 6 -->
-                <div class="slide-card" x-show="currentSlide === 6">
-                    <span class="slide-badge">Slide 06/06</span>
-                    <h3>The Ask & Use of Funds</h3>
+                <!-- STAFFING PLAN TAB -->
+                <div class="card" x-show="activeTab === 'staffing'">
+                    <h2>Organization & Staffing Plan</h2>
+                    <h3>1. Core Technical Hiring</h3>
                     <ul>
-                        <li><b>The Request:</b> <b>$2.5M Seed Round</b> to accelerate GTM scaling and automate lab integration pipelines.</li>
-                        <li><b>Use of Capital:</b>
-                            - 50% ($1.25M) Engineering & Product (GKE cluster expansions, Quest/LabCorp API bridges).
-                            - 30% ($750K) Go-To-Market (concierge medicine outreach, clinical sales).
-                            - 20% ($500K) Compliance & Audits (SOC2 Type II audits, HIPAA infrastructure).
-                        </li>
+                        <template x-for="person in payload.staffing">
+                            <li x-text="person"></li>
+                        </template>
                     </ul>
-                    <div class="speaker-notes">
-                        <b>Speaker Notes:</b> We are raising $2.5 Million to scale our team, build direct lab API bridges, and expand our sales footprint. We invite you to join us in building the digital infrastructure for the future of medicine.
-                    </div>
                 </div>
 
-                <!-- Controls -->
-                <div class="slide-controls">
-                    <button class="btn-control" @click="currentSlide = Math.max(1, currentSlide - 1)" :disabled="currentSlide === 1">Previous</button>
-                    <span style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-secondary);" x-text="`Slide ${currentSlide} of ${maxSlides}`"></span>
-                    <button class="btn-control" @click="currentSlide = Math.min(maxSlides, currentSlide + 1)" :disabled="currentSlide === maxSlides">Next</button>
+                <!-- USER ADOPTION TAB -->
+                <div class="card" x-show="activeTab === 'adoption'">
+                    <h2>User Adoption & Engagement Plan</h2>
+                    <h3>1. Onboarding & Intake</h3>
+                    <p x-text="payload.adoption.onboarding"></p>
+
+                    <h3>2. Compliance Boosters</h3>
+                    <p x-text="payload.adoption.compliance"></p>
                 </div>
             </div>
-        </div>
-
-        <!-- BUSINESS PLAN TAB -->
-        <div class="card" x-show="activeTab === 'business'">
-            <h2>Optified Platform: Executive Business Plan</h2>
-            <h3>1. Executive Summary</h3>
-            <p>Optified is the premier enterprise software-as-a-service (SaaS) platform designed specifically for private, high-performance longevity clinics and concierge wellness practitioners. Modern longevity medicine has shifted healthcare from a reactive, disease-focused model to a proactive, bio-marker-driven optimization strategy. However, clinical teams are currently overwhelmed by the manual parsing, integration, and analysis of disparate patient multi-omic datasets—including whole-genome sequencing (WGS), blood chemistry panel PDFs, gut microbiome analyses, and real-time biometric feeds from wearables (Oura, Whoop, Apple Watch).</p>
-            <p>Optified bridges this critical infrastructure gap. By automating diagnostic PDF ingestion and grounding clinical decisions in an AI-powered Medical Knowledge Graph, the platform reduces clinician administrative overhead by up to 90%.</p>
-
-            <h3>2. Product and Technology Architecture</h3>
-            <p>The Optified Platform leverages a highly efficient, type-safe stack designed for sub-millisecond execution speeds, minimal container footprint, and robust horizontal scaling. It utilizes Go standard library on the backend with a PostgreSQL/Supabase database core, delivering HTML fragments dynamically with HTMX and Alpine.js.</p>
-
-            <h3>3. Regulatory, Security, and Compliance Strategy</h3>
-            <p>All Protected Health Information (PHI) is encrypted at rest using AES-256-GCM and secured using TLS 1.3. Multitenant database isolation is strictly enforced via Row Level Security (RLS) policies at the PostgreSQL database level, preventing cross-tenant leaks.</p>
-            <p>Our infrastructure is fully aligned with the <b>FedRAMP Moderate Baseline (NIST SP 800-53 Rev 5)</b>, featuring private GKE Autopilot clusters, Cloud Armor WAF policies, Customer-Managed Encryption Keys (CMEK) via Cloud KMS, and real-time log streaming (SIEM integration).</p>
-        </div>
-
-        <!-- ROADMAP TAB -->
-        <div class="card" x-show="activeTab === 'roadmap'">
-            <h2>Technology & Development Roadmap</h2>
-            <h3>1. Past Milestones (Phases 1-300)</h3>
-            <ul>
-                <li><b>Core Foundation:</b> Go standard library core, HTMX + Alpine dynamic frontends, PostgreSQL managed schema definitions, and secure cookie session overrides.</li>
-                <li><b>Biomarkers Ingestion:</b> Genova Diagnostics, Microbiomix, and PNOĒ lab PDF parsers converting text columns into indexed SQL records.</li>
-            </ul>
-
-            <h3>2. Recent Milestones (Phases 301-515)</h3>
-            <ul>
-                <li><b>Epigenetic Age & DunedinPACE:</b> Epigenetic clock simulations and DunedinPACE simulated speed history search logs.</li>
-                <li><b>Gut Microbiome Diversity:</b> Built Shannon diversity index advice print target verification and resets logs queries.</li>
-                <li><b>Cardio Alerts & HRV:</b> Enforced training session Zone 1 warnings alerts log searches and yearly HRV sleep correlation trend line hover logs.</li>
-                <li><b>Infrastructure Security:</b> Aligned architecture to the **FedRAMP Moderate Baseline (NIST SP 800-53 Rev 5)**, featuring private GKE Autopilot clusters, Cloud Armor WAF protection, and Customer-Managed KMS Keys (CMEK).</li>
-            </ul>
-
-            <h3>3. Next Milestones (Q4 2026 - Q2 2027)</h3>
-            <ul>
-                <li><b>Quest & LabCorp Direct API Bridges (Q4 2026):</b> Direct API integrations to fetch patient diagnostic results, eliminating PDF uploads.</li>
-                <li><b>FedRAMP Moderate Track (Q4 2026):</b> Finalize C3PAO meeting, submit System Security Plan (SSP), and obtain FedRAMP Moderate Authorization.</li>
-                <li><b>Automated Pharmacy Dropshipping APIs (Q1 2027):</b> Connect clinician protocols to Thorne and Fullscript APIs.</li>
-            </ul>
-        </div>
-
-        <!-- FINANCIAL FORECAST TAB -->
-        <div class="card" x-show="activeTab === 'forecast'">
-            <h2>5-Year Financial & Margin Projection</h2>
-            <p>Optified expects to maintain an <b>84% Gross Margin</b> on recurring software licenses. GKE infrastructure costs scale linearly with the number of active clinics, while AI API costs are managed using local models and prompt engineering.</p>
-            
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Metric</th>
-                            <th>Year 1</th>
-                            <th>Year 2</th>
-                            <th>Year 3</th>
-                            <th>Year 4</th>
-                            <th>Year 5</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Clinician Seats</td>
-                            <td>200</td>
-                            <td>600</td>
-                            <td>1,200</td>
-                            <td>2,800</td>
-                            <td>5,000</td>
-                        </tr>
-                        <tr>
-                            <td>Active Client Profiles</td>
-                            <td>2,000</td>
-                            <td>7,500</td>
-                            <td>15,000</td>
-                            <td>45,000</td>
-                            <td>80,000</td>
-                        </tr>
-                        <tr class="text-accent-cyan">
-                            <td>SaaS Revenue ($)</td>
-                            <td>$477,600</td>
-                            <td>$1,432,800</td>
-                            <td>$2,865,600</td>
-                            <td>$6,686,400</td>
-                            <td>$11,940,000</td>
-                        </tr>
-                        <tr class="text-accent-cyan">
-                            <td>Client Portal Revenue ($)</td>
-                            <td>$456,000</td>
-                            <td>$1,710,000</td>
-                            <td>$3,420,000</td>
-                            <td>$10,260,000</td>
-                            <td>$18,240,000</td>
-                        </tr>
-                        <tr>
-                            <td>Affiliate Commissions ($)</td>
-                            <td>$80,000</td>
-                            <td>$300,000</td>
-                            <td>$600,000</td>
-                            <td>$1,800,000</td>
-                            <td>$3,200,000</td>
-                        </tr>
-                        <tr class="text-accent-cyan" style="background-color: rgba(0, 240, 255, 0.05); font-weight: 700;">
-                            <td>Total Revenue ($)</td>
-                            <td>$1,013,600</td>
-                            <td>$3,442,800</td>
-                            <td>$6,885,600</td>
-                            <td>$18,746,400</td>
-                            <td>$33,380,000</td>
-                        </tr>
-                        <tr>
-                            <td>Gross Profit ($)</td>
-                            <td>$851,424</td>
-                            <td>$2,891,952</td>
-                            <td>$5,783,904</td>
-                            <td>$15,746,976</td>
-                            <td>$28,039,200</td>
-                        </tr>
-                        <tr>
-                            <td>Gross Margin (%)</td>
-                            <td>84.0%</td>
-                            <td>84.0%</td>
-                            <td>84.0%</td>
-                            <td>84.0%</td>
-                            <td>84.0%</td>
-                        </tr>
-                        <tr class="text-accent-cyan">
-                            <td>EBITDA ($)</td>
-                            <td>$201,424</td>
-                            <td>$1,391,952</td>
-                            <td>$3,283,904</td>
-                            <td>$11,246,976</td>
-                            <td>$20,039,200</td>
-                        </tr>
-                        <tr>
-                            <td>EBITDA Margin (%)</td>
-                            <td>19.9%</td>
-                            <td>40.4%</td>
-                            <td>47.7%</td>
-                            <td>60.0%</td>
-                            <td>60.0%</td>
-                        </tr>
-                        <tr>
-                            <td>LTV:CAC Ratio</td>
-                            <td>10.7</td>
-                            <td>13.7</td>
-                            <td>17.2</td>
-                            <td>20.7</td>
-                            <td>24.0</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- GO-TO-MARKET TAB -->
-        <div class="card" x-show="activeTab === 'gtm'">
-            <h2>Go-To-Market & Revenue Tiers</h2>
-            <h3>1. SaaS Tiers & Subscription Structure</h3>
-            <ul>
-                <li><b>Standard Seat:</b> $199/month per clinician. Includes core uploader queue monitors and KnowsItAll assistant.</li>
-                <li><b>Concierge Clinic Tier:</b> $499/month (up to 5 clinician seats). Includes custom branding and priority GKE hosting.</li>
-                <li><b>Enterprise Health System Tier:</b> Custom pricing, offering dedicated databases and Single-Sign-On (SSO) integration.</li>
-            </ul>
-
-            <h3>2. Channel & Sales Strategy</h3>
-            <p>Optified targets cash-paying premium clinics located in wealthy metro hubs (San Francisco, London, Zurich, Tokyo) with direct B2B outbound sales. In addition, API partnerships with diagnostics labs (Genova, Quest) allow bundling Optified licenses directly with testing kit sales.</p>
-        </div>
-
-        <!-- STAFFING PLAN TAB -->
-        <div class="card" x-show="activeTab === 'staffing'">
-            <h2>Organization & Staffing Plan</h2>
-            <h3>1. Core Technical Hiring</h3>
-            <ul>
-                <li><b>Bioinformatics Lead (Q3 2026):</b> Maintain genomic variant parsing logic and expand pipeline support for diverse lab providers ($160K - $190K base).</li>
-                <li><b>Senior Backend Security Engineer (Q4 2026):</b> Maintain VPC Service Controls, GKE Autopilot cluster configurations, Cloud Armor WAF policies, SIEM logging pipelines, and manage FedRAMP Moderate and SOC2 compliance audits ($150K - $175K base).</li>
-                <li><b>Clinical Safety Officer (Q4 2026):</b> Oversee medical accuracy of KnowsItAll recommendations ($140K - $160K base).</li>
-            </ul>
-        </div>
-
-        <!-- USER ADOPTION TAB -->
-        <div class="card" x-show="activeTab === 'adoption'">
-            <h2>User Adoption & Engagement Plan</h2>
-            <h3>1. Onboarding & Intake</h3>
-            <p>Engagement begins with standard intake questionnaires and OAuth connections to patient wearables (Oura, Whoop, Apple Health) to populate initial baseline metrics immediately.</p>
-
-            <h3>2. Compliance Boosters</h3>
-            <p>Patients log daily protocol compliance (supplements, workouts) on a visual compliance calendar. If anomalous telemetry is recorded (e.g. sustained glucose spikes), the patient is prompted to book a telehealth video consultation using our integrated, secure Daily.co video widgets.</p>
-        </div>
+        </template>
 
     </div>
 
