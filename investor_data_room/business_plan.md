@@ -44,8 +44,13 @@ graph TD
 
 Optified enforces a "Zero Trust / Compliance-First" operational model, ensuring all components exceed standard regulatory guidelines.
 
-### 3.1 HIPAA and GDPR Compliance
-All Protected Health Information (PHI) is encrypted at rest using AES-256-GCM. In transit, data is secured using TLS 1.3. Multitenant database isolation is strictly enforced via Row Level Security (RLS) policies at the PostgreSQL database level, preventing any cross-tenant data leaks.
+### 3.1 HIPAA, GDPR, and FedRAMP Compliance
+All Protected Health Information (PHI) is encrypted at rest using AES-256-GCM. In transit, data is secured using TLS 1.3. Multitenant database isolation is strictly enforced via Row Level Security (RLS) policies at the PostgreSQL database level, preventing any cross-tenant data leaks. 
+
+Our infrastructure is fully aligned with the **FedRAMP Moderate Baseline (NIST SP 800-53 Rev 5)**, featuring:
+* **Perimeter Hardening:** Private GKE Autopilot clusters, Cloud Armor WAF policies protecting against SQLi/XSS/RCE, and VPC Service Controls.
+* **Storage Protection:** Database Customer-Managed Encryption Keys (CMEK) via Cloud KMS, and Secret Manager replication.
+* **Continuous Monitoring:** Real-time log streaming through Cloud Logging sinks to SIEM platforms (Chronicle/Splunk), and automated Artifact Registry vulnerability container scanning.
 
 ### 3.2 Audit Trails and Cryptographic Signatures
 * **Clinical Note Verification:** Every clinical note logged by a practitioner requires a digital signature computed using HMAC-SHA256 with a secure clinic-specific key. Any manual modification of the raw database records invalidates the signature, providing an immutable audit trail.

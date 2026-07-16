@@ -53,12 +53,12 @@
 ## Slide 5: Under the Hood: Security & Compliance
 * **Layout Design:** System diagram outlining encryption stages, digital signatures, and security gateways.
 * **Content:**
-  * **Data Security:** Full AES-256 encryption at rest, TLS 1.3 in transit, and row-level database separation.
+  * **Data Security:** Full AES-256-GCM encryption at rest, TLS 1.3 in transit, and row-level database separation.
+  * **FedRAMP & HIPAA Ready:** Engineered to align with the **FedRAMP Moderate Baseline (NIST SP 800-53 Rev 5)** utilizing GKE private endpoint cluster infrastructure, Cloud Armor WAF policies, and Customer-Managed KMS keys.
   * **Data Integrity:** Clinicians sign clinical observations using HMAC-SHA256 signatures to create a secure audit log.
-  * **Ingress Protection:** Webhooks use signed timestamp headers with a 5-minute leeway window to block replay attacks.
-  * **MFA Gate:** PHI exports require multi-factor token verification and log the requester's IP, browser, and timestamp.
+  * **Continuous Monitoring:** Real-time log streaming to SIEM pipelines (Chronicle/Splunk) and container scan validation.
 * **Speaker Notes:**
-  > Because we handle PHI, security is our priority. We use HMAC signatures to verify clinical notes, restrict CSV exports behind MFA gates, and secure all API webhooks with timestamped replay guards.
+  > Because we handle PHI, security is our priority. Our platform is built from the ground up to support FedRAMP Moderate and HIPAA requirements. We enforce row-level tenant isolation, sign notes with HMAC signatures to prevent tampering, and protect our APIs with Cloud Armor.
 
 ---
 
