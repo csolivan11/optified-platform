@@ -32,7 +32,7 @@ To support growth, Optified will expand key hires across engineering, clinical o
   * *Role:* Maintain genomic variant parsing logic and expand pipeline support for diverse lab providers.
   * *Compensation:* $160K - $190K base | 0.75% equity.
 * **Senior Backend Security Engineer (Q4 2026):**
-  * *Role:* Oversee HIPAA audit logs, security gates, and SOC2 compliance audits.
+  * *Role:* Maintain VPC Service Controls, GKE Autopilot cluster configurations, Cloud Armor WAF policies, SIEM logging pipelines, and manage FedRAMP Moderate and SOC2 compliance audits.
   * *Compensation:* $150K - $175K base | 0.5% equity.
 
 ### 2.2 Clinical Operations & Safety
