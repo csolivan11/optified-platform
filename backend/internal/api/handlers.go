@@ -1901,6 +1901,10 @@ func HandleScheduleWorkout(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Missing workout_type or scheduled_date", http.StatusBadRequest)
 		return
 	}
+	if len(notes) > 500 {
+		http.Error(w, "Planning notes field value too long (500 chars limit)", http.StatusBadRequest)
+		return
+	}
 
 	// Logging simulated fitness scheduling
 	action := "scheduled_fitness_workout"
@@ -4260,6 +4264,8 @@ func HandleUpdateProfileGender(w http.ResponseWriter, r *http.Request) {
 		<div class="p-2 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] mt-2">
 			Gender preferences registered as: <b class="text-slate-100 uppercase font-mono">%s</b>.
 		</div>
+		<!-- Update validation status display (Phase 491) -->
+		<span id="gender-validation-status" hx-swap-oob="innerHTML" class="text-[8px] text-cyan-400 font-mono">Validation: Passed</span>
 	`, gender)))
 }
 
@@ -4874,6 +4880,10 @@ func HandleUpdatePublicationComment(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Missing pmid or comment annotation", http.StatusBadRequest)
 		return
 	}
+	if len(pmid) > 15 {
+		http.Error(w, "PMID value too long", http.StatusBadRequest)
+		return
+	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write([]byte(fmt.Sprintf("Annotation Updated: %s", comment)))
@@ -5125,7 +5135,7 @@ func HandleSearchSecurityLocations(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := r.URL.Query().Get("search_ip")
-	if query != "" && (len(query) > 45 || strings.Contains(query, ";") || strings.Contains(query, "'")) {
+	if query != "" && (len(query) > 45 || strings.Contains(query, ";") || strings.Contains(query, "'") || strings.Contains(strings.ToLower(query), "select") || strings.Contains(strings.ToLower(query), "union")) {
 		http.Error(w, "Search query query parameter value too long or contains invalid characters", http.StatusBadRequest)
 		return
 	}
@@ -5288,8 +5298,8 @@ func HandleSearchConsultationCalendarInviteLogs(w http.ResponseWriter, r *http.R
 	}
 
 	query := r.URL.Query().Get("query")
-	if query != "" && len(query) > 50 {
-		http.Error(w, "Search query value too long", http.StatusBadRequest)
+	if query != "" && (len(query) > 50 || strings.Contains(query, ";") || strings.Contains(query, "'") || strings.Contains(strings.ToLower(query), "select") || strings.Contains(strings.ToLower(query), "union")) {
+		http.Error(w, "Search query value too long or contains invalid characters", http.StatusBadRequest)
 		return
 	}
 	html := fmt.Sprintf(`
@@ -5363,6 +5373,10 @@ func HandleGetBillingReceiptPreferenceLogsSearch(w http.ResponseWriter, r *http.
 	}
 
 	query := r.URL.Query().Get("query")
+	if query != "" && len(query) > 50 {
+		http.Error(w, "Search query value too long", http.StatusBadRequest)
+		return
+	}
 	html := fmt.Sprintf(`
 		<span>Preference update log: Set to PDF (Query: "%s")</span>
 	`, query)
@@ -5393,6 +5407,10 @@ func HandleSearchHRVSleepCorrelationYearlyMonthlyDetails(w http.ResponseWriter, 
 	}
 
 	query := r.URL.Query().Get("query")
+	if query != "" && len(query) > 50 {
+		http.Error(w, "Search query value too long", http.StatusBadRequest)
+		return
+	}
 	html := fmt.Sprintf(`
 		<p>Trend Details: Coefficient: 0.82 | R-Squared: 0.67 (Query: "%s")</p>
 	`, query)
@@ -5410,10 +5428,87 @@ func HandleSearchKnowsItAllParserRawJSONMetadataLogs(w http.ResponseWriter, r *h
 	}
 
 	query := r.URL.Query().Get("query")
+	if query != "" && len(query) > 50 {
+		http.Error(w, "Search query value too long", http.StatusBadRequest)
+		return
+	}
 	html := fmt.Sprintf(`
 		<span>Metadata update: Updated paper title (Query: "%s")</span>
 	`, query)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write([]byte(html))
+}
+
+// HandleSearchHorvathSimulationDunedinPaceHistoryLogs searches DunedinPACE simulated aging speed logs (Phase 494)
+func HandleSearchHorvathSimulationDunedinPaceHistoryLogs(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	query := r.URL.Query().Get("search_logs")
+	html := fmt.Sprintf(`
+		<span>PACE delta search log check: (Filtered: "%s")</span>
+	`, query)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(html))
+}
+
+// HandleGetClinicianSearchDelayOptionDefaultLogsSearch searches delay updates logs (Phase 496)
+func HandleGetClinicianSearchDelayOptionDefaultLogsSearch(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	query := r.URL.Query().Get("query")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(fmt.Sprintf("Logs: Filtered delay logs (Query: %q)", query)))
+}
+
+// HandleGetGutDiversityAdviceHTMLLogs searches print logs (Phase 498)
+func HandleGetGutDiversityAdviceHTMLLogs(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	query := r.URL.Query().Get("query")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(fmt.Sprintf("Logs: Filtered print logs (Query: %q)", query)))
+}
+
+// HandleGetFitnessAlertsZone1LogsSearch searches zone 1 warning logs (Phase 503)
+func HandleGetFitnessAlertsZone1LogsSearch(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	query := r.URL.Query().Get("query")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(fmt.Sprintf("Logs: Filtered Zone 1 alert logs (Query: %q)", query)))
+}
+
+// HandleGetGutPhylumAlertThresholdResetLogs searches resets logs (Phase 508)
+func HandleGetGutPhylumAlertThresholdResetLogs(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	clientID, _ := ctx.Value(UserIDKey).(string)
+	if clientID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	query := r.URL.Query().Get("query")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(fmt.Sprintf("Logs: Filtered gut resets logs (Query: %q)", query)))
 }
 

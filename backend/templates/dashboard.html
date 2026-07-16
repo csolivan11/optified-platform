@@ -595,11 +595,18 @@
                         <!-- Baseline delta description (Phase 468) -->
                         <span class="text-[7px] text-slate-500 font-mono">PACE delta: -0.05 units/year</span>
                     </div>
-                    <input type="text" name="query" placeholder="Filter delta logs..."
-                           hx-get="/api/longevity/horvath-simulation/dunedinpace-history/search"
-                           hx-trigger="keyup changed delay:300ms"
-                           hx-target="#dunedinpace-history-details"
-                           class="px-1.5 py-0.5 border border-navy-800 rounded bg-navy-950 text-slate-200 text-[8px] focus:outline-none">
+                    <div class="flex items-center gap-1.5">
+                        <input type="text" name="query" placeholder="Filter delta..."
+                               hx-get="/api/longevity/horvath-simulation/dunedinpace-history/search"
+                               hx-trigger="keyup changed delay:300ms"
+                               hx-target="#dunedinpace-history-details"
+                               class="px-1.5 py-0.5 border border-navy-800 rounded bg-navy-950 text-slate-200 text-[8px] focus:outline-none">
+                        <input type="text" name="search_logs" placeholder="Filter logs..."
+                               hx-get="/api/longevity/horvath-simulation/dunedinpace-history/search/logs"
+                               hx-trigger="keyup changed delay:300ms"
+                               hx-target="#dunedinpace-history-details"
+                               class="px-1.5 py-0.5 border border-navy-800 rounded bg-navy-950 text-slate-200 text-[8px] focus:outline-none">
+                    </div>
                 </div>
                 <div id="dunedinpace-history-details" hx-get="/api/longevity/horvath-simulation/dunedinpace-history" hx-trigger="load, horvathSimRun from:body">
                     <p class="text-[10px] text-slate-500 animate-pulse">Loading DunedinPACE simulation speed comparison charts...</p>
@@ -897,10 +904,18 @@
                             PDF Export
                         </a>
                         <!-- HTML printable advice with calibration targets (Phase 472) -->
-                        <a href="/api/diagnostics/gut-diversity/advice/html" target="_blank"
-                           class="px-1.5 py-0.5 rounded border border-navy-800 bg-navy-900 hover:bg-navy-850 text-[8px] font-semibold text-slate-300 hover:text-white transition">
-                            HTML Print (Calibration Targets: Checked)
-                        </a>
+                        <div class="inline-flex items-center gap-1">
+                            <a href="/api/diagnostics/gut-diversity/advice/html" target="_blank"
+                               class="px-1.5 py-0.5 rounded border border-navy-800 bg-navy-900 hover:bg-navy-850 text-[8px] font-semibold text-slate-300 hover:text-white transition">
+                                HTML Print (Calibration Targets: Checked)
+                            </a>
+                            <input type="text" name="query" placeholder="Filter print logs..."
+                                   hx-get="/api/diagnostics/gut-diversity/advice/html/logs"
+                                   hx-trigger="keyup changed delay:300ms"
+                                   hx-target="#gut-diversity-print-logs"
+                                   class="px-1 py-0.5 border border-navy-800 rounded bg-navy-900 text-slate-200 text-[7px] focus:outline-none">
+                            <span id="gut-diversity-print-logs" class="text-[6px] text-slate-500 font-mono hidden"></span>
+                        </div>
                         <button hx-post="/api/diagnostics/gut-diversity/advice/email"
                                 hx-target="#microbiome-advice-container"
                                 hx-swap="afterend"
@@ -961,6 +976,14 @@
                         <span>Range Status: Restored to defaults.</span>
                         <!-- Range reset validation details display (Phase 483) -->
                         <span class="block text-[6px] text-cyan-400 font-mono">Reset Verification: Passed (Defaults: Bacteroidetes=50%)</span>
+                        <div class="mt-1 flex items-center gap-1">
+                            <input type="text" name="query" placeholder="Filter resets..."
+                                   hx-get="/api/diagnostics/gut-diversity/phylum/alert/reset/logs"
+                                   hx-trigger="keyup changed delay:300ms"
+                                   hx-target="#gut-phyla-resets-logs-container"
+                                   class="px-1 py-0.5 border border-navy-800 rounded bg-navy-900 text-slate-200 text-[6px] focus:outline-none">
+                            <span id="gut-phyla-resets-logs-container" class="text-[6px] text-slate-500 font-mono hidden"></span>
+                        </div>
                     </div>
                         <a href="/api/diagnostics/gut-diversity/phylum/pdf" target="_blank"
                            class="px-2 py-1 rounded border border-navy-800 bg-navy-900 hover:bg-navy-850 text-[9px] font-semibold text-slate-300 hover:text-white transition text-center flex items-center justify-center">
@@ -1298,8 +1321,18 @@
                 <!-- Warning check validator (Phase 453) -->
                 <span hx-get="/api/fitness/alerts/zone1" hx-trigger="load" class="text-[8px] text-rose-400 block font-mono">Alert status: Normal</span>
                 <!-- Warnings check logs display (Phase 478) -->
-                <div hx-get="/api/fitness/alerts/zone1/logs" hx-trigger="load" class="mt-1 text-[7px] text-slate-500 font-mono italic">
-                    <span>Logs: Loading alert verification logs...</span>
+                <div class="mt-1 p-1 rounded bg-navy-950 border border-navy-900">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-[7px] text-slate-500 uppercase block font-semibold">Alarm Logs</span>
+                        <input type="text" name="query" placeholder="Filter alerts..."
+                               hx-get="/api/fitness/alerts/zone1/logs/search"
+                               hx-trigger="keyup changed delay:300ms"
+                               hx-target="#clinician-zone1-logs-container"
+                               class="px-1 py-0.5 border border-navy-800 rounded bg-navy-900 text-slate-200 text-[7px] focus:outline-none">
+                    </div>
+                    <div id="clinician-zone1-logs-container" hx-get="/api/fitness/alerts/zone1/logs" hx-trigger="load" class="text-[7px] text-slate-500 font-mono italic">
+                        <span>Loading alert verification logs...</span>
+                    </div>
                 </div>
             </div>
             <!-- Zone 2 Workout Alert parameters checkbox (Phase 328) -->
@@ -1376,13 +1409,17 @@
                     </div>
                     <!-- Tooltip Hover details cards (Phase 455) -->
                     <div x-show="hovered" class="absolute top-2 left-2 right-2 bg-slate-900/95 border border-navy-800 rounded p-1.5 text-[8px] text-slate-350 z-10 font-mono space-y-0.5">
-                        <div class="flex justify-between items-center mb-1">
+                        <div class="flex justify-between items-center mb-1 gap-1">
                             <span>Trend Stats Details</span>
-                            <input type="text" name="query" placeholder="Search stats..."
-                                   hx-get="/api/wearables/hrv/sleep-correlation/yearly/monthly/details/search"
-                                   hx-trigger="keyup changed delay:300ms"
-                                   hx-target="#yearly-monthly-tooltip-details"
-                                   class="px-1 py-0.5 border border-navy-800 rounded bg-navy-900 text-slate-200 text-[7px] focus:outline-none">
+                            <div class="flex items-center gap-1">
+                                <input type="text" name="query" placeholder="Search stats..."
+                                       hx-get="/api/wearables/hrv/sleep-correlation/yearly/monthly/details/search"
+                                       hx-trigger="keyup changed delay:300ms"
+                                       hx-target="#yearly-monthly-tooltip-details"
+                                       class="px-1 py-0.5 border border-navy-800 rounded bg-navy-900 text-slate-200 text-[7px] focus:outline-none">
+                                <!-- Sleep Details search validation feedback display (Phase 504) -->
+                                <span id="sleep-monthly-details-feedback" class="text-[6px] text-cyan-400 font-mono whitespace-nowrap">Status: Valid</span>
+                            </div>
                         </div>
                         <div id="yearly-monthly-tooltip-details" hx-get="/api/wearables/hrv/sleep-correlation/yearly/monthly/details" hx-trigger="load">
                             <p class="animate-pulse">Loading hover stats details...</p>

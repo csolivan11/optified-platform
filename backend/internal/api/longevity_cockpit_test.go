@@ -2959,3 +2959,113 @@ func TestHandleSearchKnowsItAllParserRawJSONMetadataLogs(t *testing.T) {
 		t.Errorf("expected searched raw JSON edits logs, got %s", rr.Body.String())
 	}
 }
+
+func TestHandleSearchHorvathSimulationDunedinPaceHistoryLogs(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/longevity/horvath-simulation/dunedinpace-history/search/logs?search_logs=Baseline", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleSearchHorvathSimulationDunedinPaceHistoryLogs)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Filtered:") {
+		t.Errorf("expected DunedinPACE history search logs, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetClinicianSearchDelayOptionDefaultLogsSearch(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/clients/config/search-delay/default/logs/search?query=300ms", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "coach-id-123", "coach")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetClinicianSearchDelayOptionDefaultLogsSearch)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Query:") {
+		t.Errorf("expected filtered delay config search logs, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetGutDiversityAdviceHTMLLogs(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/diagnostics/gut-diversity/advice/html/logs?query=Calibration", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetGutDiversityAdviceHTMLLogs)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Query:") {
+		t.Errorf("expected gut diversity print logs, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetFitnessAlertsZone1LogsSearch(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/fitness/alerts/zone1/logs/search?query=Alert", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetFitnessAlertsZone1LogsSearch)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Query:") {
+		t.Errorf("expected filtered Zone 1 warning logs, got %s", rr.Body.String())
+	}
+}
+
+func TestHandleGetGutPhylumAlertThresholdResetLogs(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/diagnostics/gut-diversity/phylum/alert/reset/logs?query=Reset", nil)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+
+	ctx := req.Context()
+	ctx = withUserSession(ctx, "client-id-123", "client")
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HandleGetGutPhylumAlertThresholdResetLogs)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %v", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Query:") {
+		t.Errorf("expected filtered gut resets logs, got %s", rr.Body.String())
+	}
+}
