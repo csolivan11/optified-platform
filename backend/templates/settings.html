@@ -142,9 +142,13 @@
                         </div>
                     </div>
                 </div>
-                <button type="submit" class="px-4 py-2 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs transition">
-                    Save Gender Preference
-                </button>
+                <div class="flex items-center gap-2">
+                    <button type="submit" class="px-4 py-2 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs transition">
+                        Save Gender Preference
+                    </button>
+                    <!-- Gender save status tag display (Phase 466) -->
+                    <span id="gender-save-status" class="text-[8px] text-cyan-400 font-mono">Status: Saved</span>
+                </div>
                 <div id="gender-feedback" class="mt-2"></div>
             </form>
         </div>
@@ -262,8 +266,18 @@
                     <!-- Format preference status check (Phase 424) -->
                     <span hx-get="/api/billing/receipts/preference/format" hx-trigger="load, billingReceiptToggled from:body" class="text-[8px] text-cyan-400 block font-mono">Format: PDF</span>
                     <!-- Receipt preferences audit update log feed checks (Phase 449) -->
-                    <div hx-get="/api/billing/receipts/preference/logs" hx-trigger="load, billingReceiptToggled from:body" class="mt-1 text-[7px] text-slate-500 space-y-0.5 font-mono">
-                        <span>Loading preferences updates history logs...</span>
+                    <div class="mt-1.5 p-1 rounded bg-navy-950/80 border border-navy-900">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[7px] text-slate-500 uppercase block font-semibold">Preference Updates</span>
+                            <input type="text" name="query" placeholder="Filter updates..."
+                                   hx-get="/api/billing/receipts/preference/logs/search"
+                                   hx-trigger="keyup changed delay:300ms"
+                                   hx-target="#billing-preferences-logs-container"
+                                   class="px-1 py-0.5 border border-navy-800 rounded bg-navy-950 text-slate-200 text-[7px] focus:outline-none">
+                        </div>
+                        <div id="billing-preferences-logs-container" hx-get="/api/billing/receipts/preference/logs" hx-trigger="load, billingReceiptToggled from:body" class="text-[7px] text-slate-500 space-y-0.5 font-mono">
+                            <span>Loading preferences updates history logs...</span>
+                        </div>
                     </div>
                 </div>
                 <div class="flex items-center gap-1.5">

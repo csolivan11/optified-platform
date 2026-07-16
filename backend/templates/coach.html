@@ -43,6 +43,10 @@
                 <span hx-get="/api/clients/config/search-delay/option" hx-trigger="load, change from:select[name=delay_val]" class="text-[8px] text-cyan-400 font-mono flex items-center px-2 bg-navy-900 border border-navy-800 rounded">Option: 300ms</span>
                 <!-- Delay default option values display (Phase 445) -->
                 <span hx-post="/api/clients/config/search-delay/default" hx-trigger="load, change from:select[name=delay_val]" class="text-[8px] text-cyan-400 font-mono flex items-center px-2 bg-navy-900 border border-navy-800 rounded">Default: 300ms</span>
+                <!-- Clinician search delay default update audit logs (Phase 470) -->
+                <div hx-get="/api/clients/config/search-delay/default/logs" hx-trigger="load, change from:select[name=delay_val]" class="text-[7px] text-slate-500 font-mono flex items-center px-2">
+                    <span>Logs: Loading update history logs...</span>
+                </div>
             </div>
             <div class="flex gap-2 justify-between items-center">
                 <div class="flex gap-2">
@@ -586,8 +590,18 @@
                                 <span id="raw-json-save-status" class="text-[8px] text-cyan-400 font-mono">Status: Saved</span>
                             </div>
                             <!-- Parser JSON metadata edits history log details checks (Phase 461) -->
-                            <div hx-get="/api/knowsitall/upload-paper/raw-json/logs" hx-trigger="load" class="mt-2 text-[7px] text-slate-550 font-mono">
-                                <span>Loading metadata changes audit logs...</span>
+                            <div class="mt-2 p-1 rounded bg-navy-950 border border-navy-900">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-[7px] text-slate-500 uppercase block font-semibold">Metadata Logs</span>
+                                    <input type="text" name="query" placeholder="Filter logs..."
+                                           hx-get="/api/knowsitall/upload-paper/raw-json/logs/search"
+                                           hx-trigger="keyup changed delay:300ms"
+                                           hx-target="#raw-json-logs-container"
+                                           class="px-1 py-0.5 border border-navy-800 rounded bg-navy-900 text-slate-200 text-[7px] focus:outline-none">
+                                </div>
+                                <div id="raw-json-logs-container" hx-get="/api/knowsitall/upload-paper/raw-json/logs" hx-trigger="load" class="text-[7px] text-slate-550 font-mono">
+                                    <span>Loading metadata changes audit logs...</span>
+                                </div>
                             </div>
                         </form>
                     </div>

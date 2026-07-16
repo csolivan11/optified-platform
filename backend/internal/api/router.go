@@ -225,6 +225,14 @@ func ConfigureRouter() *chi.Mux {
 			r.Get("/knowsitall/upload-paper/raw-json/logs", HandleGetKnowsItAllParserRawJSONMetadataLogs)
 			r.Get("/consultations/calendar/logs/search", HandleSearchConsultationCalendarInviteLogs)
 			r.Get("/fitness/alerts/zone1", HandleGetFitnessAlertsZone1)
+
+			// Phases 466-490 Extensions
+			r.Get("/longevity/horvath-simulation/dunedinpace-history/search", HandleSearchHorvathSimulationDunedinPaceHistory)
+			r.Get("/clients/config/search-delay/default/logs", HandleGetClinicianSearchDelayOptionDefaultLogs)
+			r.Get("/billing/receipts/preference/logs/search", HandleGetBillingReceiptPreferenceLogsSearch)
+			r.Get("/fitness/alerts/zone1/logs", HandleGetFitnessAlertsZone1Logs)
+			r.Get("/wearables/hrv/sleep-correlation/yearly/monthly/details/search", HandleSearchHRVSleepCorrelationYearlyMonthlyDetails)
+			r.Get("/knowsitall/upload-paper/raw-json/logs/search", HandleSearchKnowsItAllParserRawJSONMetadataLogs)
 		})
 	})
 
